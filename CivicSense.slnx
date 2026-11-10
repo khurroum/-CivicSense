@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="src/CivicSense.API/CivicSense.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Business/">
+    <Project Path="src/CivicSense.Facade/CivicSense.Facade.csproj" />
+  </Folder>
+  <Folder Name="/src/Library/">
+    <Project Path="src/CivicSense.DataAccess/CivicSense.DataAccess.csproj" />
+    <Project Path="src/CivicSense.Entities/CivicSense.Entities.csproj" />
+    <Project Path="src/CivicSense.Framework/CivicSense.Framework.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="src/CivicSense.Web.UI/CivicSense.Web.UI.csproj" />
+  </Folder>
+</Solution>
