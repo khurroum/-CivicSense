@@ -24,6 +24,34 @@ builder.Services.AddDataAccessServices();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 
+builder.Services.AddScoped<
+    IIssueWorkflowService, IssueWorkflowService>();
+
+builder.Services.AddScoped<
+    IIssueCommentService, IssueCommentService>();
+
+builder.Services.AddScoped<
+    IIssueConfirmationService, IssueConfirmationService>();
+
+builder.Services.AddScoped<
+    IFeedbackService, FeedbackService>();
+
+builder.Services.AddScoped<
+    INotificationService, NotificationService>();
+
+builder.Services.AddScoped<
+    IAIAnalysisService, AIAnalysisService>();
+
+builder.Services.AddScoped<
+    IServiceProviderService, ServiceProviderService>();
+
+builder.Services.AddScoped<
+    IServiceRequestService, ServiceRequestService>();
+
+builder.Services.AddScoped<
+    IPaymentService, PaymentService>();
+
+
 var app = builder.Build();
 
 // HTTP request pipeline

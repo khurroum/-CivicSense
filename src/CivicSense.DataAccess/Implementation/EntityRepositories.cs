@@ -92,7 +92,8 @@ namespace CivicSense.DataAccess.Implementation
     public class IssueAssignmentRepository
         : Repository<IssueAssignment>, IIssueAssignmentRepository
     {
-        public IssueAssignmentRepository(ApplicationDbContext context)
+        public IssueAssignmentRepository(
+            ApplicationDbContext context)
             : base(context)
         {
         }
@@ -114,7 +115,8 @@ namespace CivicSense.DataAccess.Implementation
           IIssueStatusHistoryRepository
     {
         public IssueStatusHistoryRepository(
-            ApplicationDbContext context) : base(context)
+            ApplicationDbContext context)
+            : base(context)
         {
         }
     }
@@ -123,9 +125,20 @@ namespace CivicSense.DataAccess.Implementation
     public class IssueCommentRepository
         : Repository<IssueComment>, IIssueCommentRepository
     {
-        public IssueCommentRepository(ApplicationDbContext context)
+        public IssueCommentRepository(
+            ApplicationDbContext context)
             : base(context)
         {
+        }
+
+        public async Task<List<IssueComment>> GetByIssueAsync(
+            int issueId)
+        {
+            return await _dbContext.IssueComments
+                .AsNoTracking()
+                .Where(x => x.IssueId == issueId && !x.IsDeleted)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync();
         }
     }
 
@@ -135,8 +148,18 @@ namespace CivicSense.DataAccess.Implementation
           IIssueConfirmationRepository
     {
         public IssueConfirmationRepository(
-            ApplicationDbContext context) : base(context)
+            ApplicationDbContext context)
+            : base(context)
         {
+        }
+
+        public async Task<IssueConfirmation?>
+            GetByIssueAndUserAsync(int issueId, int userId)
+        {
+            return await _dbContext.IssueConfirmations
+                .FirstOrDefaultAsync(x =>
+                    x.IssueId == issueId &&
+                    x.UserId == userId);
         }
     }
 
@@ -144,7 +167,8 @@ namespace CivicSense.DataAccess.Implementation
     public class NotificationRepository
         : Repository<Notification>, INotificationRepository
     {
-        public NotificationRepository(ApplicationDbContext context)
+        public NotificationRepository(
+            ApplicationDbContext context)
             : base(context)
         {
         }
@@ -158,13 +182,24 @@ namespace CivicSense.DataAccess.Implementation
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task<List<Notification>> GetByUserAsync(
+            int userId)
+        {
+            return await _dbContext.Notifications
+                .AsNoTracking()
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+        }
     }
 
     // 10. AI ANALYSIS
     public class AIAnalysisRepository
         : Repository<AIAnalysis>, IAIAnalysisRepository
     {
-        public AIAnalysisRepository(ApplicationDbContext context)
+        public AIAnalysisRepository(
+            ApplicationDbContext context)
             : base(context)
         {
         }
@@ -174,17 +209,30 @@ namespace CivicSense.DataAccess.Implementation
     public class FeedbackRepository
         : Repository<Feedback>, IFeedbackRepository
     {
-        public FeedbackRepository(ApplicationDbContext context)
+        public FeedbackRepository(
+            ApplicationDbContext context)
             : base(context)
         {
+        }
+
+        public async Task<Feedback?> GetByIssueAndUserAsync(
+            int issueId, int userId)
+        {
+            return await _dbContext.Feedbacks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.IssueId == issueId &&
+                    x.UserId == userId);
         }
     }
 
     // 12. SERVICE PROVIDER
     public class ServiceProviderRepository
-        : Repository<ServiceProvider>, IServiceProviderRepository
+        : Repository<ServiceProvider>,
+          IServiceProviderRepository
     {
-        public ServiceProviderRepository(ApplicationDbContext context)
+        public ServiceProviderRepository(
+            ApplicationDbContext context)
             : base(context)
         {
         }
@@ -197,13 +245,22 @@ namespace CivicSense.DataAccess.Implementation
                 .OrderBy(x => x.BusinessName)
                 .ToListAsync();
         }
+
+        public async Task<ServiceProvider?> GetByUserIdAsync(
+            int userId)
+        {
+            return await _dbContext.ServiceProviders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+        }
     }
 
     // 13. SERVICE REQUEST
     public class ServiceRequestRepository
         : Repository<ServiceRequest>, IServiceRequestRepository
     {
-        public ServiceRequestRepository(ApplicationDbContext context)
+        public ServiceRequestRepository(
+            ApplicationDbContext context)
             : base(context)
         {
         }
@@ -215,8 +272,19 @@ namespace CivicSense.DataAccess.Implementation
           IPaymentTransactionRepository
     {
         public PaymentTransactionRepository(
-            ApplicationDbContext context) : base(context)
+            ApplicationDbContext context)
+            : base(context)
         {
+        }
+
+        public async Task<List<PaymentTransaction>> GetByRequestAsync(
+            int serviceRequestId)
+        {
+            return await _dbContext.PaymentTransactions
+                .AsNoTracking()
+                .Where(x => x.ServiceRequestId == serviceRequestId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
     }
 }

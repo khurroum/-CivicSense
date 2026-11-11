@@ -1,5 +1,6 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
+using CivicSense.DataAccess;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
 using CivicSense.Facade.DTOs;
@@ -13,17 +14,23 @@ namespace CivicSense.Facade.Implementation
         private readonly IUserRepository _users;
         private readonly ICategoryRepository _categories;
         private readonly IIssueAssignmentRepository _assignments;
+        private readonly IIssueStatusHistoryRepository _history;
+        private readonly ApplicationDbContext _context;
 
         public IssueService(
             IIssueRepository issues,
             IUserRepository users,
             ICategoryRepository categories,
-            IIssueAssignmentRepository assignments)
+            IIssueAssignmentRepository assignments,
+            IIssueStatusHistoryRepository history,
+            ApplicationDbContext context)
         {
             _issues = issues;
             _users = users;
             _categories = categories;
             _assignments = assignments;
+            _history = history;
+            _context = context;
         }
 
         public async Task<IssueDto> CreateAsync(
@@ -71,7 +78,25 @@ namespace CivicSense.Facade.Implementation
                 CreatedAt = DateTime.UtcNow
             };
 
+            // The issue and initial history must be saved together.
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
             await _issues.AddAsync(issue);
+
+            var statusHistory = new IssueStatusHistory
+            {
+                IssueId = issue.Id,
+                OldStatus = null,
+                NewStatus = IssueStatus.Reported,
+                ChangedById = user.Id,
+                Note = "Issue reported by resident.",
+                ChangedAt = DateTime.UtcNow
+            };
+
+            await _history.AddAsync(statusHistory);
+
+            await transaction.CommitAsync();
 
             return Map(issue);
         }
@@ -97,20 +122,24 @@ namespace CivicSense.Facade.Implementation
             var issue = await _issues.GetByIdAsync(issueId);
 
             if (issue == null || issue.IsArchived)
+            {
                 return null;
+            }
 
-            // The resident who submitted it can view it.
+            // The reporter can view their own report.
             if (issue.ReporterId == user.Id)
+            {
                 return Map(issue);
+            }
 
-            // Admin can review public civic reports.
+            // Admin can view public civic reports.
             if (user.Role == UserRole.Admin &&
                 issue.IssueType == IssueType.PublicCivic)
             {
                 return Map(issue);
             }
 
-            // Staff may view civic issues assigned to them.
+            // Assigned staff can view public civic issues.
             if (user.Role == UserRole.Staff &&
                 issue.IssueType == IssueType.PublicCivic)
             {
@@ -118,10 +147,11 @@ namespace CivicSense.Facade.Implementation
                     .GetActiveByIssueAsync(issueId);
 
                 if (assignment?.StaffId == user.Id)
+                {
                     return Map(issue);
+                }
             }
 
-            // Other access is denied, including private reports.
             throw new UnauthorizedAccessException(
                 "You cannot access this issue.");
         }
@@ -146,7 +176,9 @@ namespace CivicSense.Facade.Implementation
             var issue = await _issues.GetByIdAsync(issueId);
 
             if (issue == null || issue.IsArchived)
+            {
                 return false;
+            }
 
             if (issue.ReporterId != user.Id)
             {
@@ -185,7 +217,9 @@ namespace CivicSense.Facade.Implementation
             var issue = await _issues.GetByIdAsync(issueId);
 
             if (issue == null || issue.IsArchived)
+            {
                 return false;
+            }
 
             if (issue.ReporterId != user.Id)
             {
@@ -193,8 +227,6 @@ namespace CivicSense.Facade.Implementation
                     "Only the reporter can archive this issue.");
             }
 
-            // Active civic work must not disappear from
-            // administrative or staff queues.
             if (issue.Status != IssueStatus.Resolved &&
                 issue.Status != IssueStatus.Rejected)
             {

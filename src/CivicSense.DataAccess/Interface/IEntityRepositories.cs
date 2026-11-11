@@ -38,17 +38,21 @@ namespace CivicSense.DataAccess.Interface
     public interface IIssueCommentRepository
         : IRepository<IssueComment>
     {
+        Task<List<IssueComment>> GetByIssueAsync(int issueId);
     }
 
     public interface IIssueConfirmationRepository
         : IRepository<IssueConfirmation>
     {
+        Task<IssueConfirmation?> GetByIssueAndUserAsync(
+            int issueId, int userId);
     }
 
     public interface INotificationRepository
         : IRepository<Notification>
     {
         Task<List<Notification>> GetUnreadByUserAsync(int userId);
+        Task<List<Notification>> GetByUserAsync(int userId);
     }
 
     public interface IAIAnalysisRepository
@@ -58,12 +62,15 @@ namespace CivicSense.DataAccess.Interface
 
     public interface IFeedbackRepository : IRepository<Feedback>
     {
+        Task<Feedback?> GetByIssueAndUserAsync(
+            int issueId, int userId);
     }
 
     public interface IServiceProviderRepository
         : IRepository<ServiceProvider>
     {
         Task<List<ServiceProvider>> GetVerifiedAsync();
+        Task<ServiceProvider?> GetByUserIdAsync(int userId);
     }
 
     public interface IServiceRequestRepository
@@ -74,5 +81,7 @@ namespace CivicSense.DataAccess.Interface
     public interface IPaymentTransactionRepository
         : IRepository<PaymentTransaction>
     {
+        Task<List<PaymentTransaction>> GetByRequestAsync(
+            int serviceRequestId);
     }
 }
