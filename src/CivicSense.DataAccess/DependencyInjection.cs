@@ -53,6 +53,11 @@ namespace CivicSense.DataAccess
             services.AddScoped<IPaymentTransactionRepository,
                 PaymentTransactionRepository>();
 
+            // Workflow query repository
+            services.AddScoped<
+                IIssueWorkflowQueryRepository,
+                IssueWorkflowQueryRepository>();
+
             return services;
         }
     }

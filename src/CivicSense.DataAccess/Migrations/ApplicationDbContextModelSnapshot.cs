@@ -207,6 +207,12 @@ namespace CivicSense.DataAccess.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
@@ -610,6 +616,12 @@ namespace CivicSense.DataAccess.Migrations
 
                     b.Property<int?>("IssueId")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime?>("ScheduledAt")
                         .HasColumnType("datetime2");

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace CivicSense.Entities
 {
@@ -34,9 +35,13 @@ namespace CivicSense.Entities
 
         public DateTime? UpdatedAt { get; set; }
 
+        // Database-generated concurrency token
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
+            = Array.Empty<byte>();
+
         // Navigation Properties
         public virtual ICollection<PaymentTransaction> Payments
         { get; set; } = new List<PaymentTransaction>();
     }
 }
-

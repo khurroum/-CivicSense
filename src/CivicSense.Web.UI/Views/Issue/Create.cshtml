@@ -1,0 +1,132 @@
+﻿@model CivicSense.Facade.DTOs.IssueCreateDto
+@using CivicSense.Entities
+
+@{
+    ViewData["Title"] = "Report an Issue";
+}
+
+<h2>Report a New Issue</h2>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="All"
+         class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+
+        <input asp-for="Title"
+               class="form-control" />
+
+        <span asp-validation-for="Title"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description"
+               class="form-label"></label>
+
+        <textarea asp-for="Description"
+                  class="form-control"
+                  rows="5"></textarea>
+
+        <span asp-validation-for="Description"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CategoryId"
+               class="form-label">
+            Category
+        </label>
+
+        <select asp-for="CategoryId"
+                asp-items="ViewBag.Categories"
+                class="form-select">
+
+            <option value="">Select a category</option>
+        </select>
+
+        <span asp-validation-for="CategoryId"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IssueType"
+               class="form-label">
+            Issue Type
+        </label>
+
+        <select asp-for="IssueType"
+                class="form-select">
+            <option value="@IssueType.PublicCivic">
+                Public Civic Issue
+            </option>
+            <option value="@IssueType.PersonalPrivate">
+                Personal / Private Issue
+            </option>
+        </select>
+
+        <span asp-validation-for="IssueType"
+              class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Address"
+               class="form-label"></label>
+
+        <input asp-for="Address"
+               class="form-control" />
+
+        <span asp-validation-for="Address"
+              class="text-danger"></span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="Latitude"
+                   class="form-label"></label>
+
+            <input asp-for="Latitude"
+                   class="form-control"
+                   type="number"
+                   step="any" />
+
+            <span asp-validation-for="Latitude"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="Longitude"
+                   class="form-label"></label>
+
+            <input asp-for="Longitude"
+                   class="form-control"
+                   type="number"
+                   step="any" />
+
+            <span asp-validation-for="Longitude"
+                  class="text-danger"></span>
+        </div>
+    </div>
+
+    <p class="text-muted">
+        Latitude and longitude are optional.
+        If provided, enter both coordinates.
+    </p>
+
+    <button type="submit"
+            class="btn btn-primary">
+        Submit Issue
+    </button>
+
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Cancel
+    </a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

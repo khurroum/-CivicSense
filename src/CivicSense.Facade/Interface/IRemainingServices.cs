@@ -1,10 +1,31 @@
 ﻿
 using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 
 namespace CivicSense.Facade.Interface
 {
     public interface IIssueWorkflowService
     {
+        // ADMIN QUERY OPERATIONS
+
+        Task<List<WorkflowQueueItemDto>>
+            GetAdminQueueAsync(int adminId);
+
+        Task<List<WorkflowStaffOptionDto>>
+            GetActiveStaffAsync(int adminId);
+
+        // STAFF QUERY OPERATIONS
+
+        Task<List<WorkflowAssignmentDto>>
+            GetMyAssignmentsAsync(int staffId);
+
+        // RESTRICTED ISSUE HISTORY
+
+        Task<List<WorkflowHistoryDto>>
+            GetHistoryAsync(int issueId, int actorId);
+
+        // EXISTING WORKFLOW OPERATIONS
+
         Task ReviewAsync(int issueId, int adminId);
 
         Task AssignAsync(
@@ -20,69 +41,76 @@ namespace CivicSense.Facade.Interface
 
     public interface IIssueCommentService
     {
-        Task<IssueComment> AddAsync(
-            int issueId, int actorId,
-            string content, bool isInternal);
+        Task<CommentDto> AddAsync(
+            int issueId,
+            int actorId,
+            CommentCreateDto dto);
 
-        Task<List<IssueComment>> GetByIssueAsync(
+        Task<List<CommentDto>> GetByIssueAsync(
             int issueId, int actorId);
     }
 
     public interface IIssueConfirmationService
     {
         Task ConfirmAsync(
-            int issueId, int actorId, bool confirmed);
+            int issueId,
+            int actorId,
+            bool confirmed);
     }
 
     public interface IFeedbackService
     {
-        Task<Feedback> SubmitAsync(
-            int issueId, int actorId, int rating,
-            bool resolutionConfirmed, string? comment);
+        Task<FeedbackDto> SubmitAsync(
+            int issueId,
+            int actorId,
+            FeedbackCreateDto dto);
     }
 
     public interface INotificationService
     {
-        Task<List<Notification>> GetMineAsync(int actorId);
+        Task<List<NotificationDto>> GetMineAsync(
+            int actorId);
 
         Task MarkReadAsync(int id, int actorId);
     }
 
     public interface IAIAnalysisService
     {
-        Task<AIAnalysis> RecordSuggestionAsync(
-            AIAnalysis suggestion);
+        // Trusted server-side AI integration only.
+        Task<AIAnalysisDto> RecordSuggestionAsync(
+            AIAnalysisCreateDto dto);
 
-        Task ReviewAsync(int analysisId, int adminId);
+        Task ReviewAsync(
+            int analysisId, int adminId);
     }
 
     public interface IServiceProviderService
     {
-        Task<ServiceProvider> RegisterAsync(
-            int actorId, string businessName,
-            string serviceType, string contactNumber,
-            string serviceArea);
+        Task<ServiceProviderDto> RegisterAsync(
+            int actorId,
+            ServiceProviderCreateDto dto);
 
-        Task VerifyAsync(int providerId, int adminId);
+        Task VerifyAsync(
+            int providerId, int adminId);
 
-        Task<List<ServiceProvider>> GetVerifiedAsync();
+        Task<List<ServiceProviderDto>> GetVerifiedAsync();
     }
 
     public interface IServiceRequestService
     {
-        Task<ServiceRequest> CreateAsync(
-            int actorId, int providerId,
-            int? issueId, string description,
-            string serviceAddress);
+        Task<ServiceRequestDto> CreateAsync(
+            int actorId,
+            ServiceRequestCreateDto dto);
 
         Task UpdateStatusAsync(
-            int requestId, int actorId,
+            int requestId,
+            int actorId,
             ServiceRequestStatus newStatus);
     }
 
     public interface IPaymentService
     {
-        Task<List<PaymentTransaction>> GetByRequestAsync(
+        Task<List<PaymentTransactionDto>> GetByRequestAsync(
             int serviceRequestId, int actorId);
     }
 }

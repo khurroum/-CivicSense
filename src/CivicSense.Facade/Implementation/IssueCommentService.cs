@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
 
 namespace CivicSense.Facade.Implementation
@@ -25,69 +26,92 @@ namespace CivicSense.Facade.Implementation
             _assignments = assignments;
         }
 
-        public async Task<IssueComment> AddAsync(
-            int issueId, int actorId,
-            string content, bool isInternal)
+        public async Task<CommentDto> AddAsync(
+            int issueId,
+            int actorId,
+            CommentCreateDto dto)
         {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            FacadeValidation.Validate(dto);
+
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
             var issue = await IssueAccess.RequireVisibleAsync(
-                _issues, _users, issueId, actorId);
+                _issues, _users, _assignments,
+                issueId, actorId);
 
-            if (string.IsNullOrWhiteSpace(content) ||
-                content.Trim().Length > 2000)
+            if (string.IsNullOrWhiteSpace(dto.Content))
             {
                 throw new ValidationException(
-                    "Comment must contain 1 to 2000 characters.");
+                    "Comment cannot be empty.");
             }
 
-            if (isInternal)
+            string content = dto.Content.Trim();
+
+            if (content.Length > 2000)
+            {
+                throw new ValidationException(
+                    "Comment cannot exceed 2000 characters.");
+            }
+
+            if (dto.IsInternal)
             {
                 if (issue.IssueType != IssueType.PublicCivic)
                 {
                     throw new UnauthorizedAccessException(
-                        "Internal notes are only allowed for civic issues.");
+                        "Internal notes are for civic issues only.");
                 }
 
                 var assignment = await _assignments
                     .GetActiveByIssueAsync(issueId);
 
-                bool authorized =
+                bool allowed =
                     user.Role == UserRole.Admin ||
                     (user.Role == UserRole.Staff &&
-                     assignment?.StaffId == actorId);
+                     assignment?.StaffId == user.Id);
 
-                if (!authorized)
+                if (!allowed)
                 {
                     throw new UnauthorizedAccessException(
-                        "Internal notes require authorized staff access.");
+                        "You cannot create internal notes.");
                 }
+            }
+            else if (issue.IssueType == IssueType.PublicCivic &&
+                     user.Role == UserRole.Staff &&
+                     !IssueAccess.IsPublished(issue))
+            {
+                // Assigned staff may add internal notes,
+                // but public comments require publication.
+                throw new ValidationException(
+                    "This issue is not open for public comments.");
             }
 
             var comment = new IssueComment
             {
-                IssueId = issueId,
-                UserId = actorId,
-                Content = content.Trim(),
-                IsInternal = isInternal,
+                IssueId = issue.Id,
+                UserId = user.Id,
+                Content = content,
+                IsInternal = dto.IsInternal,
                 IsDeleted = false,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _comments.AddAsync(comment);
 
-            return comment;
+            return Map(comment);
         }
 
-        public async Task<List<IssueComment>> GetByIssueAsync(
+        public async Task<List<CommentDto>> GetByIssueAsync(
             int issueId, int actorId)
         {
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
             var issue = await IssueAccess.RequireVisibleAsync(
-                _issues, _users, issueId, actorId);
+                _issues, _users, _assignments,
+                issueId, actorId);
 
             bool canReadInternal = false;
 
@@ -99,16 +123,29 @@ namespace CivicSense.Facade.Implementation
                 canReadInternal =
                     user.Role == UserRole.Admin ||
                     (user.Role == UserRole.Staff &&
-                     assignment?.StaffId == actorId);
+                     assignment?.StaffId == user.Id);
             }
 
-            // Query only comments associated with this issue.
-            var comments = await _comments.GetByIssueAsync(issueId);
+            var comments = await _comments
+                .GetByIssueAsync(issueId);
 
             return comments
                 .Where(x => !x.IsInternal || canReadInternal)
-                .OrderBy(x => x.CreatedAt)
+                .Select(Map)
                 .ToList();
+        }
+
+        private static CommentDto Map(IssueComment comment)
+        {
+            return new CommentDto
+            {
+                Id = comment.Id,
+                IssueId = comment.IssueId,
+                AuthorId = comment.UserId,
+                Content = comment.Content,
+                IsInternal = comment.IsInternal,
+                CreatedAt = comment.CreatedAt
+            };
         }
     }
 }

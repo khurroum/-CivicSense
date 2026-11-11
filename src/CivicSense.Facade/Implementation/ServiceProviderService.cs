@@ -2,11 +2,13 @@
 using System.ComponentModel.DataAnnotations;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
 
 namespace CivicSense.Facade.Implementation
 {
-    public class ServiceProviderService : IServiceProviderService
+    public class ServiceProviderService
+        : IServiceProviderService
     {
         private readonly IServiceProviderRepository _providers;
         private readonly IUserRepository _users;
@@ -19,36 +21,32 @@ namespace CivicSense.Facade.Implementation
             _users = users;
         }
 
-        public async Task<ServiceProvider> RegisterAsync(
+        public async Task<ServiceProviderDto> RegisterAsync(
             int actorId,
-            string businessName,
-            string serviceType,
-            string contactNumber,
-            string serviceArea)
+            ServiceProviderCreateDto dto)
         {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            FacadeValidation.Validate(dto);
+
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
             if (user.Role != UserRole.Resident)
             {
                 throw new UnauthorizedAccessException(
-                    "Only resident accounts can register providers.");
+                    "Only residents can register providers.");
             }
 
-            if (string.IsNullOrWhiteSpace(businessName) ||
-                businessName.Trim().Length > 150 ||
-                string.IsNullOrWhiteSpace(serviceType) ||
-                serviceType.Trim().Length > 100 ||
-                string.IsNullOrWhiteSpace(contactNumber) ||
-                contactNumber.Trim().Length > 20 ||
-                string.IsNullOrWhiteSpace(serviceArea) ||
-                serviceArea.Trim().Length > 200)
+            if (string.IsNullOrWhiteSpace(dto.BusinessName) ||
+                string.IsNullOrWhiteSpace(dto.ServiceType) ||
+                string.IsNullOrWhiteSpace(dto.ContactNumber) ||
+                string.IsNullOrWhiteSpace(dto.ServiceArea))
             {
                 throw new ValidationException(
-                    "Invalid service provider information.");
+                    "All provider details are required.");
             }
 
-            // Retrieve provider profile for this user only.
             var existing = await _providers
                 .GetByUserIdAsync(actorId);
 
@@ -60,11 +58,11 @@ namespace CivicSense.Facade.Implementation
 
             var provider = new ServiceProvider
             {
-                UserId = actorId,
-                BusinessName = businessName.Trim(),
-                ServiceType = serviceType.Trim(),
-                ContactNumber = contactNumber.Trim(),
-                ServiceArea = serviceArea.Trim(),
+                UserId = user.Id,
+                BusinessName = dto.BusinessName.Trim(),
+                ServiceType = dto.ServiceType.Trim(),
+                ContactNumber = dto.ContactNumber.Trim(),
+                ServiceArea = dto.ServiceArea.Trim(),
                 IsVerified = false,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
@@ -72,7 +70,7 @@ namespace CivicSense.Facade.Implementation
 
             await _providers.AddAsync(provider);
 
-            return provider;
+            return Map(provider);
         }
 
         public async Task VerifyAsync(
@@ -87,17 +85,37 @@ namespace CivicSense.Facade.Implementation
             if (provider == null || !provider.IsActive)
             {
                 throw new ValidationException(
-                    "Active service provider not found.");
+                    "Active provider not found.");
             }
+
+            if (provider.IsVerified)
+                return;
 
             provider.IsVerified = true;
 
             await _providers.UpdateAsync(provider);
         }
 
-        public async Task<List<ServiceProvider>> GetVerifiedAsync()
+        public async Task<List<ServiceProviderDto>>
+            GetVerifiedAsync()
         {
-            return await _providers.GetVerifiedAsync();
+            var providers = await _providers
+                .GetVerifiedAsync();
+
+            return providers.Select(Map).ToList();
+        }
+
+        private static ServiceProviderDto Map(
+            ServiceProvider provider)
+        {
+            return new ServiceProviderDto
+            {
+                Id = provider.Id,
+                BusinessName = provider.BusinessName,
+                ServiceType = provider.ServiceType,
+                ServiceArea = provider.ServiceArea,
+                IsVerified = provider.IsVerified
+            };
         }
     }
 }

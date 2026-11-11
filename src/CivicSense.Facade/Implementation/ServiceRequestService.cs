@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
 
 namespace CivicSense.Facade.Implementation
@@ -26,124 +27,177 @@ namespace CivicSense.Facade.Implementation
             _users = users;
         }
 
-        public async Task<ServiceRequest> CreateAsync(
-            int actorId, int providerId,
-            int? issueId, string description,
-            string serviceAddress)
+        public async Task<ServiceRequestDto> CreateAsync(
+            int actorId,
+            ServiceRequestCreateDto dto)
         {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            FacadeValidation.Validate(dto);
+
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
             if (user.Role != UserRole.Resident)
-                throw new UnauthorizedAccessException();
+            {
+                throw new UnauthorizedAccessException(
+                    "Only residents can request services.");
+            }
 
             var provider = await _providers
-                .GetByIdAsync(providerId);
+                .GetByIdAsync(dto.ServiceProviderId);
 
             if (provider == null ||
-                !provider.IsActive ||
-                !provider.IsVerified)
+                !provider.IsVerified ||
+                !provider.IsActive)
+            {
                 throw new ValidationException(
-                    "Verified service provider not found.");
+                    "Verified active provider not found.");
+            }
 
-            if (provider.UserId == actorId)
+            if (provider.UserId == user.Id)
+            {
                 throw new ValidationException(
                     "You cannot request your own service.");
+            }
 
-            if (string.IsNullOrWhiteSpace(description) ||
-                description.Trim().Length > 2000 ||
-                string.IsNullOrWhiteSpace(serviceAddress) ||
-                serviceAddress.Trim().Length > 500)
+            if (string.IsNullOrWhiteSpace(dto.Description) ||
+                string.IsNullOrWhiteSpace(dto.ServiceAddress))
+            {
                 throw new ValidationException(
-                    "Valid service description and address required.");
+                    "Description and address are required.");
+            }
 
-            if (issueId.HasValue)
+            if (dto.IssueId.HasValue)
             {
                 var issue = await _issues
-                    .GetByIdAsync(issueId.Value);
+                    .GetByIdAsync(dto.IssueId.Value);
 
                 if (issue == null ||
                     issue.IsArchived ||
-                    issue.ReporterId != actorId ||
+                    issue.ReporterId != user.Id ||
                     issue.IssueType != IssueType.PersonalPrivate)
+                {
                     throw new ValidationException(
-                        "Only your own private issue can be linked.");
+                        "You can link only your own private issue.");
+                }
             }
 
             var request = new ServiceRequest
             {
-                UserId = actorId,
-                ServiceProviderId = providerId,
-                IssueId = issueId,
-                Description = description.Trim(),
-                ServiceAddress = serviceAddress.Trim(),
+                UserId = user.Id,
+                ServiceProviderId = provider.Id,
+                IssueId = dto.IssueId,
+                Description = dto.Description.Trim(),
+                ServiceAddress = dto.ServiceAddress.Trim(),
                 Status = ServiceRequestStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _requests.AddAsync(request);
 
-            return request;
+            return Map(request);
         }
 
         public async Task UpdateStatusAsync(
-            int requestId, int actorId,
+            int requestId,
+            int actorId,
             ServiceRequestStatus newStatus)
         {
-            await FacadeValidation.GetActiveUserAsync(
-                _users, actorId);
+            var user = await FacadeValidation
+                .GetActiveUserAsync(_users, actorId);
 
             if (!Enum.IsDefined(newStatus))
+            {
                 throw new ValidationException(
                     "Invalid service request status.");
+            }
 
-            var request = await _requests.GetByIdAsync(
-                requestId);
+            var request = await _requests
+                .GetByIdAsync(requestId);
 
             if (request == null)
+            {
                 throw new KeyNotFoundException(
                     "Service request not found.");
+            }
 
             var provider = await _providers
                 .GetByIdAsync(request.ServiceProviderId);
 
             if (provider == null)
+            {
                 throw new ValidationException(
-                    "Provider not found.");
+                    "Service provider not found.");
+            }
 
-            bool isCustomer = request.UserId == actorId;
+            bool isCustomer = request.UserId == user.Id;
 
             bool isProvider =
-                provider.UserId == actorId &&
-                provider.IsVerified &&
-                provider.IsActive;
+                provider.UserId == user.Id &&
+                provider.IsActive &&
+                provider.IsVerified;
 
-            bool allowed =
-                (isCustomer &&
-                 request.Status == ServiceRequestStatus.Pending &&
-                 newStatus == ServiceRequestStatus.Cancelled)
-                ||
-                (isProvider &&
-                 request.Status == ServiceRequestStatus.Pending &&
-                 (newStatus == ServiceRequestStatus.Accepted ||
-                  newStatus == ServiceRequestStatus.Rejected))
-                ||
-                (isProvider &&
-                 request.Status == ServiceRequestStatus.Accepted &&
-                 newStatus == ServiceRequestStatus.InProgress)
-                ||
-                (isProvider &&
-                 request.Status == ServiceRequestStatus.InProgress &&
-                 newStatus == ServiceRequestStatus.Completed);
+            bool allowed = false;
+
+            // Resident may cancel a pending request.
+            if (isCustomer &&
+                request.Status == ServiceRequestStatus.Pending &&
+                newStatus == ServiceRequestStatus.Cancelled)
+            {
+                allowed = true;
+            }
+
+            // Provider may accept or reject a pending request.
+            if (isProvider &&
+                request.Status == ServiceRequestStatus.Pending &&
+                (newStatus == ServiceRequestStatus.Accepted ||
+                 newStatus == ServiceRequestStatus.Rejected))
+            {
+                allowed = true;
+            }
+
+            // Provider may start accepted work.
+            if (isProvider &&
+                request.Status == ServiceRequestStatus.Accepted &&
+                newStatus == ServiceRequestStatus.InProgress)
+            {
+                allowed = true;
+            }
+
+            // Provider may complete in-progress work.
+            if (isProvider &&
+                request.Status == ServiceRequestStatus.InProgress &&
+                newStatus == ServiceRequestStatus.Completed)
+            {
+                allowed = true;
+            }
 
             if (!allowed)
-                throw new UnauthorizedAccessException(
+            {
+                throw new ValidationException(
                     "This status transition is not permitted.");
+            }
 
             request.Status = newStatus;
             request.UpdatedAt = DateTime.UtcNow;
 
             await _requests.UpdateAsync(request);
+        }
+
+        private static ServiceRequestDto Map(
+            ServiceRequest request)
+        {
+            return new ServiceRequestDto
+            {
+                Id = request.Id,
+                ServiceProviderId =
+                    request.ServiceProviderId,
+                IssueId = request.IssueId,
+                Status = request.Status,
+                EstimatedCost = request.EstimatedCost,
+                CreatedAt = request.CreatedAt
+            };
         }
     }
 }

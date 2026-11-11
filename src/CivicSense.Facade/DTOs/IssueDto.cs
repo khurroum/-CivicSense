@@ -53,6 +53,13 @@ namespace CivicSense.Facade.DTOs
 
         [Range(-180, 180)]
         public decimal? Longitude { get; set; }
+
+        // Original SQL Server concurrency token.
+        [Required]
+        [MinLength(8)]
+        [MaxLength(8)]
+        public byte[] RowVersion { get; set; }
+            = Array.Empty<byte>();
     }
 
     public class IssueDto
@@ -80,5 +87,9 @@ namespace CivicSense.Facade.DTOs
         public IssuePriority Priority { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        // Used when editing an issue.
+        public byte[] RowVersion { get; set; }
+            = Array.Empty<byte>();
     }
 }

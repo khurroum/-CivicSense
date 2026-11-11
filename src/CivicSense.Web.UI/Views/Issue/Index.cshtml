@@ -1,0 +1,79 @@
+﻿@model List<CivicSense.Facade.DTOs.IssueDto>
+
+@{
+    ViewData["Title"] = "My Issues";
+}
+
+<h2>My Reported Issues</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<p>
+    <a asp-action="Create"
+       class="btn btn-primary">
+        Report New Issue
+    </a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Reported On</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var issue in Model)
+        {
+            <tr>
+                <td>@issue.Title</td>
+                <td>@issue.IssueType</td>
+                <td>@issue.Status</td>
+                <td>@issue.Priority</td>
+                <td>
+                    @issue.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                </td>
+                <td>
+                    <a asp-action="Details"
+                       asp-route-id="@issue.Id"
+                       class="btn btn-sm btn-info">
+                        Details
+                    </a>
+
+                    @if (issue.Status ==
+                         CivicSense.Entities.IssueStatus.Reported ||
+                         issue.Status ==
+                         CivicSense.Entities.IssueStatus.NeedsInformation)
+                    {
+                        <a asp-action="Edit"
+                           asp-route-id="@issue.Id"
+                           class="btn btn-sm btn-warning">
+                            Edit
+                        </a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (Model.Count == 0)
+{
+    <p>You haven't reported any issues yet.</p>
+}

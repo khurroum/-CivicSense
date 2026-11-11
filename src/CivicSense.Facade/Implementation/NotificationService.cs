@@ -1,6 +1,7 @@
 ﻿
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
 
 namespace CivicSense.Facade.Implementation
@@ -18,21 +19,21 @@ namespace CivicSense.Facade.Implementation
             _users = users;
         }
 
-        public async Task<List<Notification>> GetMineAsync(
+        public async Task<List<NotificationDto>> GetMineAsync(
             int actorId)
         {
-            // Verify the current user is active.
             await FacadeValidation.GetActiveUserAsync(
                 _users, actorId);
 
-            // Retrieve only notifications belonging to this user.
-            return await _notifications.GetByUserAsync(actorId);
+            var notifications = await _notifications
+                .GetByUserAsync(actorId);
+
+            return notifications.Select(Map).ToList();
         }
 
         public async Task MarkReadAsync(
             int id, int actorId)
         {
-            // Verify the current user is active.
             await FacadeValidation.GetActiveUserAsync(
                 _users, actorId);
 
@@ -45,7 +46,6 @@ namespace CivicSense.Facade.Implementation
                     "Notification not found.");
             }
 
-            // Prevent users from modifying other users' notifications.
             if (notification.UserId != actorId)
             {
                 throw new UnauthorizedAccessException(
@@ -53,14 +53,28 @@ namespace CivicSense.Facade.Implementation
             }
 
             if (notification.IsRead)
-            {
                 return;
-            }
 
             notification.IsRead = true;
             notification.ReadAt = DateTime.UtcNow;
 
             await _notifications.UpdateAsync(notification);
+        }
+
+        private static NotificationDto Map(
+            Notification notification)
+        {
+            return new NotificationDto
+            {
+                Id = notification.Id,
+                IssueId = notification.IssueId,
+                Title = notification.Title,
+                Message = notification.Message,
+                NotificationType = notification.NotificationType,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt,
+                ReadAt = notification.ReadAt
+            };
         }
     }
 }

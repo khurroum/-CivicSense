@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2>CivicSense Dashboard</h2>
+
+<hr />
+
+<p>
+    Welcome, <strong>@ViewBag.FullName</strong>
+</p>
+
+<p>
+    User ID: @ViewBag.UserId
+</p>
+
+<p>
+    Role: <strong>@ViewBag.Role</strong>
+</p>
+
+<p>
+    Authentication successful.
+</p>
+
+<form asp-controller="Account"
+      asp-action="Logout"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <button type="submit">
+        Logout
+    </button>
+</form>

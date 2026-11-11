@@ -14,4 +14,7 @@
   <Folder Name="/src/Presentation/">
     <Project Path="src/CivicSense.Web.UI/CivicSense.Web.UI.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CivicSense.Tests/CivicSense.Tests.csproj" />
+  </Folder>
 </Solution>

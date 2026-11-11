@@ -1,7 +1,8 @@
 ﻿
 using CivicSense.DataAccess.Interface;
-using CivicSense.Entities;
+using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
+using CivicSense.Entities;
 
 namespace CivicSense.Facade.Implementation
 {
@@ -24,9 +25,10 @@ namespace CivicSense.Facade.Implementation
             _users = users;
         }
 
-        public async Task<List<PaymentTransaction>> GetByRequestAsync(
-            int serviceRequestId,
-            int actorId)
+        public async Task<List<PaymentTransactionDto>>
+            GetByRequestAsync(
+                int serviceRequestId,
+                int actorId)
         {
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
@@ -43,20 +45,37 @@ namespace CivicSense.Facade.Implementation
             var provider = await _providers
                 .GetByIdAsync(request.ServiceProviderId);
 
-            bool canView =
-                request.UserId == actorId ||
-                provider?.UserId == actorId ||
+            bool authorized =
+                request.UserId == user.Id ||
+                provider?.UserId == user.Id ||
                 user.Role == UserRole.Admin;
 
-            if (!canView)
+            if (!authorized)
             {
                 throw new UnauthorizedAccessException(
-                    "You cannot view these payment records.");
+                    "You cannot view these payments.");
             }
 
-            // Only retrieve payments linked to this request.
-            return await _payments
+            var payments = await _payments
                 .GetByRequestAsync(serviceRequestId);
+
+            return payments.Select(Map).ToList();
+        }
+
+        private static PaymentTransactionDto Map(
+            PaymentTransaction payment)
+        {
+            return new PaymentTransactionDto
+            {
+                Id = payment.Id,
+                ServiceRequestId =
+                    payment.ServiceRequestId,
+                Amount = payment.Amount,
+                Currency = payment.Currency,
+                Status = payment.Status,
+                CreatedAt = payment.CreatedAt,
+                PaidAt = payment.PaidAt
+            };
         }
     }
 }
