@@ -1,9 +1,9 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
 using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
-using System.ComponentModel.DataAnnotations;
 
 namespace CivicSense.Facade.Implementation
 {
@@ -34,7 +34,9 @@ namespace CivicSense.Facade.Implementation
         {
             var categories = await _categories.GetActiveAsync();
 
-            return categories.Select(Map).ToList();
+            return categories
+                .Select(Map)
+                .ToList();
         }
 
         public async Task<CategoryDto?> GetByIdAsync(int id)
@@ -63,7 +65,9 @@ namespace CivicSense.Facade.Implementation
             var categories = await _categories.GetAllAsync();
 
             bool exists = categories.Any(x =>
-                string.Equals(x.Name, name,
+                string.Equals(
+                    x.Name,
+                    name,
                     StringComparison.OrdinalIgnoreCase));
 
             if (exists)
@@ -86,7 +90,9 @@ namespace CivicSense.Facade.Implementation
         }
 
         public async Task<bool> UpdateAsync(
-            int id, CategoryUpdateDto dto, int actorId)
+            int id,
+            CategoryUpdateDto dto,
+            int actorId)
         {
             await FacadeValidation.RequireAdminAsync(
                 _users, actorId);
@@ -110,7 +116,9 @@ namespace CivicSense.Facade.Implementation
 
             bool duplicate = categories.Any(x =>
                 x.Id != id &&
-                string.Equals(x.Name, name,
+                string.Equals(
+                    x.Name,
+                    name,
                     StringComparison.OrdinalIgnoreCase));
 
             if (duplicate)
@@ -138,7 +146,33 @@ namespace CivicSense.Facade.Implementation
             if (category == null)
                 return false;
 
+            if (!category.IsActive)
+                return true;
+
             category.IsActive = false;
+
+            await _categories.UpdateAsync(category);
+
+            return true;
+        }
+
+        public async Task<bool> ReactivateAsync(
+            int id, int actorId)
+        {
+            // Never trust only the controller's role check.
+            await FacadeValidation.RequireAdminAsync(
+                _users, actorId);
+
+            var category = await _categories.GetByIdAsync(id);
+
+            if (category == null)
+                return false;
+
+            // Repeated requests are safe.
+            if (category.IsActive)
+                return true;
+
+            category.IsActive = true;
 
             await _categories.UpdateAsync(category);
 

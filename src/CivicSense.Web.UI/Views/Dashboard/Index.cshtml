@@ -1,26 +1,91 @@
 ﻿@{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "CivicSense Dashboard";
 }
 
 <h2>CivicSense Dashboard</h2>
 
 <hr />
 
-<p>
-    Welcome, <strong>@ViewBag.FullName</strong>
-</p>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>
+            Welcome, @ViewBag.FullName
+        </h5>
 
-<p>
-    User ID: @ViewBag.UserId
-</p>
+        <p>
+            <strong>User ID:</strong>
+            @ViewBag.UserId
+        </p>
 
-<p>
-    Role: <strong>@ViewBag.Role</strong>
-</p>
+        <p>
+            <strong>Role:</strong>
+            @ViewBag.Role
+        </p>
 
-<p>
-    Authentication successful.
-</p>
+        <p class="text-success mb-0">
+            Authentication successful.
+        </p>
+    </div>
+</div>
+
+<h4>Quick Actions</h4>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+
+    @if (User.IsInRole("Resident"))
+    {
+        <a asp-controller="Issue"
+           asp-action="Index"
+           class="btn btn-primary">
+            My Issues
+        </a>
+
+        <a asp-controller="Issue"
+           asp-action="Create"
+           class="btn btn-success">
+            Report New Issue
+        </a>
+
+        <a asp-controller="Category"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Browse Categories
+        </a>
+    }
+
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-controller="IssueWorkflow"
+           asp-action="AdminQueue"
+           class="btn btn-primary">
+            Civic Issue Review Queue
+        </a>
+
+        <a asp-controller="Category"
+           asp-action="Index"
+           class="btn btn-success">
+            Manage Categories
+        </a>
+    }
+
+    @if (User.IsInRole("Staff"))
+    {
+        <a asp-controller="IssueWorkflow"
+           asp-action="MyAssignments"
+           class="btn btn-primary">
+            My Assigned Issues
+        </a>
+    }
+
+    <a asp-controller="Notification"
+       asp-action="Index"
+       class="btn btn-outline-primary">
+        My Notifications
+    </a>
+
+</div>
+
+<hr />
 
 <form asp-controller="Account"
       asp-action="Logout"
@@ -28,7 +93,8 @@
 
     @Html.AntiForgeryToken()
 
-    <button type="submit">
+    <button type="submit"
+            class="btn btn-outline-danger">
         Logout
     </button>
 </form>

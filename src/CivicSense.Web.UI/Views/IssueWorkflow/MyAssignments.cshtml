@@ -1,0 +1,178 @@
+﻿@model List<CivicSense.Facade.DTOs.WorkflowAssignmentDto>
+@using CivicSense.Entities
+
+@{
+    ViewData["Title"] = "My Assigned Issues";
+}
+
+<h2>Staff — My Assigned Issues</h2>
+
+<p class="text-muted">
+    Manage your assigned public civic issues.
+</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<p>
+    <a asp-controller="Dashboard"
+       asp-action="Index"
+       class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</p>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No issues are currently assigned to you.
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var assignment in Model)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+
+                        <h5 class="card-title">
+                            @assignment.Title
+                        </h5>
+
+                        <p class="text-muted">
+                            Issue #@assignment.IssueId
+                        </p>
+
+                        <p>
+                            <strong>Category:</strong>
+                            @assignment.CategoryName
+                        </p>
+
+                        <p>
+                            <strong>Description:</strong>
+                            @assignment.Description
+                        </p>
+
+                        <p>
+                            <strong>Address:</strong>
+                            @assignment.Address
+                        </p>
+
+                        <p>
+                            <strong>Status:</strong>
+                            <span class="badge bg-primary">
+                                @assignment.Status
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Priority:</strong>
+                            @assignment.Priority
+                        </p>
+
+                        <p>
+                            <strong>Assigned:</strong>
+                            @assignment.AssignedAt.ToString(
+                                "dd MMM yyyy HH:mm") UTC
+                        </p>
+
+                        @if (assignment.ExpectedCompletionAt
+                             .HasValue)
+                        {
+                            <p>
+                                <strong>Expected completion:</strong>
+                                @assignment.ExpectedCompletionAt
+                                .Value.ToString("dd MMM yyyy")
+                            </p>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(
+                             assignment.AssignmentNote))
+                        {
+                            <p>
+                                <strong>Assignment note:</strong>
+                                @assignment.AssignmentNote
+                            </p>
+                        }
+
+                        <a asp-controller="Issue"
+                           asp-action="Details"
+                           asp-route-id="@assignment.IssueId"
+                           class="btn btn-outline-primary btn-sm">
+                            View Issue
+                        </a>
+
+                        <a asp-action="History"
+                           asp-route-id="@assignment.IssueId"
+                           class="btn btn-outline-secondary btn-sm">
+                            View History
+                        </a>
+
+                        <hr />
+
+                        @if (assignment.Status ==
+                             IssueStatus.Assigned)
+                        {
+                            <form asp-action="StartWork"
+                                  asp-route-id="@assignment.IssueId"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit"
+                                        class="btn btn-primary w-100">
+                                    Start Work
+                                </button>
+                            </form>
+                        }
+                        else if (assignment.Status ==
+                                 IssueStatus.InProgress)
+                        {
+                            <form asp-action="Resolve"
+                                  asp-route-id="@assignment.IssueId"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit"
+                                        class="btn btn-success w-100"
+                                        onclick="return confirm('Mark this issue as resolved?');">
+                                    Mark as Resolved
+                                </button>
+                            </form>
+                        }
+                        else if (assignment.Status ==
+                                 IssueStatus.Resolved)
+                        {
+                            <div class="alert alert-success mb-0">
+                                This issue is resolved.
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">
+                                No workflow action is available
+                                for the current status.
+                            </p>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+

@@ -1,0 +1,164 @@
+﻿@model List<CivicSense.Facade.DTOs.WorkflowQueueItemDto>
+@using CivicSense.Entities
+
+@{
+    ViewData["Title"] = "Admin Review Queue";
+}
+
+<h2>Admin — Civic Issue Review Queue</h2>
+
+<p class="text-muted">
+    Review public civic issues, assign staff members,
+    or reject reports that do not qualify.
+</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<p>
+    <a asp-controller="Dashboard"
+       asp-action="Index"
+       class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</p>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No civic issues are currently waiting
+        for administrative action.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>Category</th>
+                    <th>Reporter</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Reported</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var issue in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@issue.Title</strong>
+                            <div class="text-muted">
+                                #@issue.IssueId
+                            </div>
+                        </td>
+
+                        <td>@issue.CategoryName</td>
+
+                        <td>@issue.ReporterName</td>
+
+                        <td>
+                            <span class="badge bg-secondary">
+                                @issue.Status
+                            </span>
+                        </td>
+
+                        <td>@issue.Priority</td>
+
+                        <td>
+                            @issue.ReportedAt.ToString(
+                                "dd MMM yyyy HH:mm") UTC
+                        </td>
+
+                        <td>
+                            <div class="d-flex flex-column gap-2">
+
+                                <a asp-controller="Issue"
+                                   asp-action="Details"
+                                   asp-route-id="@issue.IssueId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    View Issue
+                                </a>
+
+                                <a asp-action="History"
+                                   asp-route-id="@issue.IssueId"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    View History
+                                </a>
+
+                                @if (issue.Status ==
+                                     IssueStatus.Reported ||
+                                     issue.Status ==
+                                     IssueStatus.NeedsInformation ||
+                                     issue.Status ==
+                                     IssueStatus.Reopened)
+                                {
+                                    <form asp-action="Review"
+                                          asp-route-id="@issue.IssueId"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-primary w-100">
+                                            Start Review
+                                        </button>
+                                    </form>
+                                }
+
+                                @if (issue.Status ==
+                                     IssueStatus.UnderReview)
+                                {
+                                    <a asp-action="Assign"
+                                       asp-route-id="@issue.IssueId"
+                                       class="btn btn-sm btn-success">
+                                        Assign Staff
+                                    </a>
+
+                                    <form asp-action="Reject"
+                                          asp-route-id="@issue.IssueId"
+                                          method="post">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <label class="form-label small">
+                                            Rejection reason
+                                        </label>
+
+                                        <textarea name="reason"
+                                                  required
+                                                  maxlength="1000"
+                                                  rows="2"
+                                                  class="form-control mb-2"
+                                                  placeholder="Explain why this issue is rejected"></textarea>
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-danger w-100"
+                                                onclick="return confirm('Reject this issue?');">
+                                            Reject Issue
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

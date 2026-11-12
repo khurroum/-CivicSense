@@ -1,0 +1,103 @@
+﻿@model CivicSense.Facade.DTOs.WorkflowQueueItemDto
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Assign Civic Issue";
+
+    var staffOptions =
+        (IEnumerable<SelectListItem>)ViewBag.StaffOptions;
+
+    bool hasStaff = staffOptions.Any();
+}
+
+<h2>Assign Civic Issue</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">@Model.Title</h5>
+
+        <p>
+            <strong>Issue ID:</strong>
+            @Model.IssueId
+        </p>
+
+        <p>
+            <strong>Category:</strong>
+            @Model.CategoryName
+        </p>
+
+        <p>
+            <strong>Reported by:</strong>
+            @Model.ReporterName
+        </p>
+
+        <p>
+            <strong>Current status:</strong>
+            @Model.Status
+        </p>
+    </div>
+</div>
+
+@if (!hasStaff)
+{
+    <div class="alert alert-warning">
+        No active Staff accounts are available.
+
+        Create a Staff test account before attempting
+        to assign this issue.
+    </div>
+}
+else
+{
+    <form asp-action="Assign"
+          asp-route-id="@Model.IssueId"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label for="staffId"
+                   class="form-label">
+                Select Staff Member
+            </label>
+
+            <select name="staffId"
+                    id="staffId"
+                    class="form-select"
+                    required>
+
+                <option value="">
+                    -- Select Staff --
+                </option>
+
+                @foreach (var staff in staffOptions)
+                {
+                    <option value="@staff.Value">
+                        @staff.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <button type="submit"
+                class="btn btn-success"
+                onclick="return confirm('Assign this issue to the selected Staff member?');">
+            Confirm Assignment
+        </button>
+    </form>
+}
+
+<p class="mt-3">
+    <a asp-action="AdminQueue"
+       class="btn btn-secondary">
+        Back to Review Queue
+    </a>
+</p>

@@ -15,8 +15,14 @@ namespace CivicSense.Facade.Interface
             CategoryCreateDto dto, int actorId);
 
         Task<bool> UpdateAsync(
-            int id, CategoryUpdateDto dto, int actorId);
+            int id,
+            CategoryUpdateDto dto,
+            int actorId);
 
-        Task<bool> DeactivateAsync(int id, int actorId);
+        Task<bool> DeactivateAsync(
+            int id, int actorId);
+
+        Task<bool> ReactivateAsync(
+            int id, int actorId);
     }
 }

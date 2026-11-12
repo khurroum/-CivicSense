@@ -1,0 +1,88 @@
+﻿@model List<CivicSense.Facade.DTOs.WorkflowHistoryDto>
+
+@{
+    ViewData["Title"] = "Issue Workflow History";
+
+    int issueId = (int)ViewBag.IssueId;
+}
+
+<h2>Workflow History — Issue #@issueId</h2>
+
+<p>
+    <a asp-controller="Issue"
+       asp-action="Details"
+       asp-route-id="@issueId"
+       class="btn btn-outline-primary">
+        View Issue Details
+    </a>
+</p>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No workflow history has been recorded.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Previous Status</th>
+                    <th>New Status</th>
+                    <th>Changed By</th>
+                    <th>Note</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var history in Model)
+                {
+                    <tr>
+                        <td>
+                            @(history.OldStatus?.ToString()
+                                ?? "Initial Report")
+                        </td>
+
+                        <td>
+                            <span class="badge bg-primary">
+                                @history.NewStatus
+                            </span>
+                        </td>
+
+                        <td>
+                            @history.ChangedByName
+                        </td>
+
+                        <td>
+                            @(history.Note
+                                ?? "No note")
+                        </td>
+
+                        <td>
+                            @history.ChangedAt.ToString(
+                                "dd MMM yyyy HH:mm") UTC
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (User.IsInRole("Admin"))
+{
+    <a asp-action="AdminQueue"
+       class="btn btn-secondary">
+        Back to Admin Queue
+    </a>
+}
+else if (User.IsInRole("Staff"))
+{
+    <a asp-action="MyAssignments"
+       class="btn btn-secondary">
+        Back to My Assignments
+    </a>
+}

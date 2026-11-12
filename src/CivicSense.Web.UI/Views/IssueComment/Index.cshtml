@@ -1,0 +1,159 @@
+﻿@model List<CivicSense.Facade.DTOs.CommentDto>
+
+@{
+    ViewData["Title"] = "Issue Comments";
+
+    int issueId = (int)ViewBag.IssueId;
+    string issueTitle = (string)ViewBag.IssueTitle;
+
+    bool canUseInternalNotes =
+        User.IsInRole("Admin") ||
+        User.IsInRole("Staff");
+}
+
+<h2>Issue Comments</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">
+            @issueTitle
+        </h5>
+
+        <p class="mb-0 text-muted">
+            Issue #@issueId
+        </p>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="status">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<h4>Discussion</h4>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No comments have been added yet.
+    </div>
+}
+else
+{
+    @foreach (var comment in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between
+                    align-items-start flex-wrap gap-2">
+
+                    <div>
+                        <strong>
+                            User #@comment.AuthorId
+                        </strong>
+
+                        @if (comment.IsInternal)
+                        {
+                            <span class="badge bg-warning text-dark">
+                                Internal Note
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                Comment
+                            </span>
+                        }
+                    </div>
+
+                    <small class="text-muted">
+                        @comment.CreatedAt.ToString(
+                            "dd MMM yyyy HH:mm") UTC
+                    </small>
+                </div>
+
+                <hr />
+
+                <p class="mb-0"
+                   style="white-space: pre-wrap;
+                overflow-wrap: anywhere;">@comment.Content</p>
+            </div>
+        </div>
+    }
+}
+
+<hr />
+
+<h4>Add a Comment</h4>
+
+<form asp-controller="IssueComment"
+      asp-action="Add"
+      asp-route-issueId="@issueId"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label for="Content"
+               class="form-label">
+            Comment
+        </label>
+
+        <textarea id="Content"
+                  name="Content"
+                  class="form-control"
+                  rows="4"
+                  maxlength="2000"
+                  required
+                  placeholder="Write your comment here..."></textarea>
+
+        <div class="form-text">
+            Maximum 2000 characters.
+        </div>
+    </div>
+
+    @if (canUseInternalNotes)
+    {
+        <div class="form-check mb-3">
+            <input type="checkbox"
+                   name="IsInternal"
+                   id="IsInternal"
+                   value="true"
+                   class="form-check-input" />
+
+            <label for="IsInternal"
+                   class="form-check-label">
+                Save as an internal note
+            </label>
+
+            <div class="form-text">
+                Internal notes are intended for
+                Admins and assigned Staff only.
+                The server checks whether you
+                are permitted to create one.
+            </div>
+        </div>
+    }
+
+    <button type="submit"
+            class="btn btn-primary">
+        Add Comment
+    </button>
+
+    <a asp-controller="Issue"
+       asp-action="Details"
+       asp-route-id="@issueId"
+       class="btn btn-secondary">
+        Back to Issue
+    </a>
+</form>

@@ -1,0 +1,135 @@
+﻿@model List<CivicSense.Facade.DTOs.NotificationDto>
+
+@{
+    ViewData["Title"] = "My Notifications";
+
+    int unreadCount = Model.Count(x => !x.IsRead);
+}
+
+<h2>My Notifications</h2>
+
+<p class="text-muted">
+    Notifications about civic issue updates
+    and your assigned work.
+</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="status">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<div class="mb-3">
+    <span class="badge bg-primary">
+        @unreadCount unread
+    </span>
+
+    <span class="badge bg-secondary">
+        @Model.Count total
+    </span>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        You have no notifications yet.
+    </div>
+}
+else
+{
+    @foreach (var notification in Model)
+    {
+        <div class="card mb-3
+            @(notification.IsRead
+    ? "border-secondary"
+    : "border-primary")">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between
+                    align-items-start flex-wrap gap-2">
+
+                    <div>
+                        <h5 class="card-title">
+                            @notification.Title
+                        </h5>
+
+                        @if (notification.IsRead)
+                        {
+                            <span class="badge bg-secondary">
+                                Read
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">
+                                Unread
+                            </span>
+                        }
+                    </div>
+
+                    <small class="text-muted">
+                        @notification.CreatedAt.ToString(
+                            "dd MMM yyyy HH:mm") UTC
+                    </small>
+                </div>
+
+                <p class="card-text mt-3"
+                   style="white-space: pre-wrap;
+                overflow-wrap: anywhere;">@notification.Message</p>
+
+                @if (notification.IssueId.HasValue)
+                {
+                    <p class="small text-muted">
+                        Issue #@notification.IssueId
+                    </p>
+                }
+
+                <div class="d-flex gap-2 flex-wrap">
+
+                    @if (notification.IssueId.HasValue)
+                    {
+                        <a asp-controller="Issue"
+                           asp-action="Details"
+                           asp-route-id="@notification.IssueId"
+                           class="btn btn-sm btn-outline-primary">
+                            View Issue
+                        </a>
+                    }
+
+                    @if (!notification.IsRead)
+                    {
+                        <form asp-action="MarkRead"
+                              asp-route-id="@notification.Id"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-success">
+                                Mark as Read
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                @if (notification.IsRead &&
+                     notification.ReadAt.HasValue)
+                {
+                    <p class="text-muted small mt-3 mb-0">
+                        Read on:
+                        @notification.ReadAt.Value.ToString(
+                            "dd MMM yyyy HH:mm") UTC
+                    </p>
+                }
+            </div>
+        </div>
+    }
+}
+
+<a asp-controller="Dashboard"
+   asp-action="Index"
+   class="btn btn-secondary mt-2">
+    Back to Dashboard
+</a>

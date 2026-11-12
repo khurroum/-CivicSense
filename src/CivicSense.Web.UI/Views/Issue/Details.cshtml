@@ -1,4 +1,5 @@
 ﻿@model CivicSense.Facade.DTOs.IssueDto
+
 @using System.Security.Claims
 @using CivicSense.Entities
 
@@ -24,19 +25,20 @@
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success">
+    <div class="alert alert-success" role="status">
         @TempData["SuccessMessage"]
     </div>
 }
 
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger">
+    <div class="alert alert-danger" role="alert">
         @TempData["ErrorMessage"]
     </div>
 }
 
 <dl class="row">
+
     <dt class="col-sm-3">Issue ID</dt>
     <dd class="col-sm-9">@Model.Id</dd>
 
@@ -60,7 +62,8 @@
 
     <dt class="col-sm-3">Reported On</dt>
     <dd class="col-sm-9">
-        @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+        @Model.CreatedAt.ToString(
+            "dd MMM yyyy HH:mm") UTC
     </dd>
 
     @if (Model.Latitude.HasValue &&
@@ -71,46 +74,68 @@
             @Model.Latitude, @Model.Longitude
         </dd>
     }
+
 </dl>
 
-@if (canEdit)
-{
-    <a asp-action="Edit"
-       asp-route-id="@Model.Id"
-       class="btn btn-warning">
-        Edit Issue
-    </a>
-}
+<hr />
 
-@if (canArchive)
-{
-    <form asp-action="Archive"
-          asp-route-id="@Model.Id"
-          method="post"
-          class="d-inline">
+<h4>Issue Discussion</h4>
 
-        @Html.AntiForgeryToken()
+<p class="text-muted">
+    View comments and, if authorized,
+    add public comments or internal notes.
+</p>
 
-        <button type="submit"
-                class="btn btn-danger"
-                onclick="return confirm('Archive this issue?');">
-            Archive Issue
-        </button>
-    </form>
-}
+<a asp-controller="IssueComment"
+   asp-action="Index"
+   asp-route-issueId="@Model.Id"
+   class="btn btn-outline-primary mb-3">
+    View Comments
+</a>
 
-@if (User.IsInRole("Resident"))
-{
-    <a asp-action="Index"
-       class="btn btn-secondary">
-        Back to My Issues
-    </a>
-}
-else
-{
-    <a asp-controller="Dashboard"
-       asp-action="Index"
-       class="btn btn-secondary">
-        Back to Dashboard
-    </a>
-}
+<hr />
+
+<div class="d-flex flex-wrap gap-2">
+
+    @if (canEdit)
+    {
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn btn-warning">
+            Edit Issue
+        </a>
+    }
+
+    @if (canArchive)
+    {
+        <form asp-action="Archive"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn btn-danger"
+                    onclick="return confirm('Archive this issue?');">
+                Archive Issue
+            </button>
+        </form>
+    }
+
+    @if (User.IsInRole("Resident"))
+    {
+        <a asp-action="Index"
+           class="btn btn-secondary">
+            Back to My Issues
+        </a>
+    }
+    else
+    {
+        <a asp-controller="Dashboard"
+           asp-action="Index"
+           class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    }
+
+</div>

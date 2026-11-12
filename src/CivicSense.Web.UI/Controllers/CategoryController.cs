@@ -25,15 +25,18 @@ namespace CivicSense.Web.UI.Controllers
                 string? value = User.FindFirstValue(
                     ClaimTypes.NameIdentifier);
 
-                if (!int.TryParse(value, out int userId))
+                if (!int.TryParse(value, out int userId)
+                    || userId <= 0)
+                {
                     throw new UnauthorizedAccessException(
                         "Invalid authentication session.");
+                }
 
                 return userId;
             }
         }
 
-        // GET: /Category
+        // GET /Category
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -46,7 +49,7 @@ namespace CivicSense.Web.UI.Controllers
             return View(categories);
         }
 
-        // GET: /Category/Details/5
+        // GET /Category/Details/5
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -57,12 +60,14 @@ namespace CivicSense.Web.UI.Controllers
 
             if (!category.IsActive &&
                 !User.IsInRole("Admin"))
+            {
                 return NotFound();
+            }
 
             return View(category);
         }
 
-        // GET: /Category/Create
+        // GET /Category/Create
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult Create()
@@ -70,7 +75,7 @@ namespace CivicSense.Web.UI.Controllers
             return View(new CategoryCreateDto());
         }
 
-        // POST: /Category/Create
+        // POST /Category/Create
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
@@ -99,7 +104,7 @@ namespace CivicSense.Web.UI.Controllers
             }
         }
 
-        // GET: /Category/Edit/5
+        // GET /Category/Edit/5
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
@@ -120,7 +125,7 @@ namespace CivicSense.Web.UI.Controllers
             return View(model);
         }
 
-        // POST: /Category/Edit/5
+        // POST /Category/Edit/5
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
@@ -154,12 +159,15 @@ namespace CivicSense.Web.UI.Controllers
             }
         }
 
-        // POST: /Category/Deactivate/5
+        // POST /Category/Deactivate/5
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Deactivate(int id)
         {
+            if (id <= 0)
+                return NotFound();
+
             bool success = await _categories.DeactivateAsync(
                 id, CurrentUserId);
 
@@ -168,6 +176,27 @@ namespace CivicSense.Web.UI.Controllers
 
             TempData["SuccessMessage"] =
                 "Category deactivated successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST /Category/Reactivate/5
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            if (id <= 0)
+                return NotFound();
+
+            bool success = await _categories.ReactivateAsync(
+                id, CurrentUserId);
+
+            if (!success)
+                return NotFound();
+
+            TempData["SuccessMessage"] =
+                "Category reactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }
