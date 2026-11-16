@@ -84,6 +84,10 @@ namespace CivicSense.DataAccess.Migrations
 
                     b.HasIndex("SuggestedCategoryId");
 
+                    b.HasIndex("SuggestedIssueType");
+
+                    b.HasIndex("SuggestedPriority");
+
                     b.ToTable("AIAnalyses", t =>
                         {
                             t.HasCheckConstraint("CK_AIAnalyses_ConfidenceScore", "[ConfidenceScore] IS NULL OR [ConfidenceScore] BETWEEN 0 AND 1");
@@ -228,7 +232,11 @@ namespace CivicSense.DataAccess.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("Priority");
+
                     b.HasIndex("ReporterId");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("IssueType", "Status", "CreatedAt");
 
@@ -400,6 +408,46 @@ namespace CivicSense.DataAccess.Migrations
                     b.ToTable("IssueImages");
                 });
 
+            modelBuilder.Entity("CivicSense.Entities.IssuePriorityLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("IssuePriorities", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "Low"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "Medium"
+                        },
+                        new
+                        {
+                            Id = (byte)3,
+                            Name = "High"
+                        },
+                        new
+                        {
+                            Id = (byte)4,
+                            Name = "Critical"
+                        });
+                });
+
             modelBuilder.Entity("CivicSense.Entities.IssueStatusHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -431,9 +479,103 @@ namespace CivicSense.DataAccess.Migrations
 
                     b.HasIndex("ChangedById");
 
+                    b.HasIndex("NewStatus");
+
+                    b.HasIndex("OldStatus");
+
                     b.HasIndex("IssueId", "ChangedAt");
 
                     b.ToTable("IssueStatusHistories");
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.IssueStatusLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("IssueStatuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "Reported"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "UnderReview"
+                        },
+                        new
+                        {
+                            Id = (byte)3,
+                            Name = "Assigned"
+                        },
+                        new
+                        {
+                            Id = (byte)4,
+                            Name = "InProgress"
+                        },
+                        new
+                        {
+                            Id = (byte)5,
+                            Name = "Resolved"
+                        },
+                        new
+                        {
+                            Id = (byte)6,
+                            Name = "Rejected"
+                        },
+                        new
+                        {
+                            Id = (byte)7,
+                            Name = "NeedsInformation"
+                        },
+                        new
+                        {
+                            Id = (byte)8,
+                            Name = "Reopened"
+                        });
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.IssueTypeLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("IssueTypes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "PublicCivic"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "PersonalPrivate"
+                        });
                 });
 
             modelBuilder.Entity("CivicSense.Entities.Notification", b =>
@@ -483,6 +625,56 @@ namespace CivicSense.DataAccess.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("CivicSense.Entities.PaymentStatusLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("PaymentStatuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "Pending"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "Processing"
+                        },
+                        new
+                        {
+                            Id = (byte)3,
+                            Name = "Completed"
+                        },
+                        new
+                        {
+                            Id = (byte)4,
+                            Name = "Failed"
+                        },
+                        new
+                        {
+                            Id = (byte)5,
+                            Name = "Refunded"
+                        },
+                        new
+                        {
+                            Id = (byte)6,
+                            Name = "Cancelled"
+                        });
+                });
+
             modelBuilder.Entity("CivicSense.Entities.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
@@ -528,6 +720,8 @@ namespace CivicSense.DataAccess.Migrations
                         .HasFilter("[GatewayTransactionId] IS NOT NULL");
 
                     b.HasIndex("ServiceRequestId");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("PaymentTransactions", t =>
                         {
@@ -647,6 +841,8 @@ namespace CivicSense.DataAccess.Migrations
 
                     b.HasIndex("IssueId");
 
+                    b.HasIndex("Status");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("ServiceProviderId", "Status");
@@ -654,6 +850,56 @@ namespace CivicSense.DataAccess.Migrations
                     b.ToTable("ServiceRequests", t =>
                         {
                             t.HasCheckConstraint("CK_ServiceRequests_EstimatedCost", "[EstimatedCost] IS NULL OR [EstimatedCost] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.ServiceRequestStatusLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ServiceRequestStatuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "Pending"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "Accepted"
+                        },
+                        new
+                        {
+                            Id = (byte)3,
+                            Name = "InProgress"
+                        },
+                        new
+                        {
+                            Id = (byte)4,
+                            Name = "Completed"
+                        },
+                        new
+                        {
+                            Id = (byte)5,
+                            Name = "Cancelled"
+                        },
+                        new
+                        {
+                            Id = (byte)6,
+                            Name = "Rejected"
                         });
                 });
 
@@ -705,7 +951,44 @@ namespace CivicSense.DataAccess.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("Role");
+
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.UserRoleLookup", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("UserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            Name = "Resident"
+                        },
+                        new
+                        {
+                            Id = (byte)2,
+                            Name = "Staff"
+                        },
+                        new
+                        {
+                            Id = (byte)3,
+                            Name = "Admin"
+                        });
                 });
 
             modelBuilder.Entity("CivicSense.Entities.AIAnalysis", b =>
@@ -724,6 +1007,16 @@ namespace CivicSense.DataAccess.Migrations
                     b.HasOne("CivicSense.Entities.Category", "SuggestedCategory")
                         .WithMany()
                         .HasForeignKey("SuggestedCategoryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("CivicSense.Entities.IssueTypeLookup", null)
+                        .WithMany()
+                        .HasForeignKey("SuggestedIssueType")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("CivicSense.Entities.IssuePriorityLookup", null)
+                        .WithMany()
+                        .HasForeignKey("SuggestedPriority")
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Issue");
@@ -760,9 +1053,27 @@ namespace CivicSense.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("CivicSense.Entities.IssueTypeLookup", null)
+                        .WithMany()
+                        .HasForeignKey("IssueType")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CivicSense.Entities.IssuePriorityLookup", null)
+                        .WithMany()
+                        .HasForeignKey("Priority")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("CivicSense.Entities.User", "Reporter")
                         .WithMany("Issues")
                         .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CivicSense.Entities.IssueStatusLookup", null)
+                        .WithMany()
+                        .HasForeignKey("Status")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -869,6 +1180,17 @@ namespace CivicSense.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("CivicSense.Entities.IssueStatusLookup", null)
+                        .WithMany()
+                        .HasForeignKey("NewStatus")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CivicSense.Entities.IssueStatusLookup", null)
+                        .WithMany()
+                        .HasForeignKey("OldStatus")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("ChangedBy");
 
                     b.Navigation("Issue");
@@ -900,6 +1222,12 @@ namespace CivicSense.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("CivicSense.Entities.PaymentStatusLookup", null)
+                        .WithMany()
+                        .HasForeignKey("Status")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("ServiceRequest");
                 });
 
@@ -927,6 +1255,12 @@ namespace CivicSense.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("CivicSense.Entities.ServiceRequestStatusLookup", null)
+                        .WithMany()
+                        .HasForeignKey("Status")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("CivicSense.Entities.User", "User")
                         .WithMany("ServiceRequests")
                         .HasForeignKey("UserId")
@@ -938,6 +1272,15 @@ namespace CivicSense.DataAccess.Migrations
                     b.Navigation("ServiceProvider");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.User", b =>
+                {
+                    b.HasOne("CivicSense.Entities.UserRoleLookup", null)
+                        .WithMany()
+                        .HasForeignKey("Role")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CivicSense.Entities.Category", b =>

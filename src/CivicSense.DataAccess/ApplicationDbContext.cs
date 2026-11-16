@@ -1,5 +1,4 @@
-﻿
-using CivicSense.Entities;
+﻿using CivicSense.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CivicSense.DataAccess
@@ -27,6 +26,14 @@ namespace CivicSense.DataAccess
         public DbSet<ServiceProvider> ServiceProviders => Set<ServiceProvider>();
         public DbSet<ServiceRequest> ServiceRequests => Set<ServiceRequest>();
         public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+
+        // Lookup tables
+        public DbSet<UserRoleLookup> UserRoles => Set<UserRoleLookup>();
+        public DbSet<IssueTypeLookup> IssueTypes => Set<IssueTypeLookup>();
+        public DbSet<IssueStatusLookup> IssueStatuses => Set<IssueStatusLookup>();
+        public DbSet<IssuePriorityLookup> IssuePriorities => Set<IssuePriorityLookup>();
+        public DbSet<ServiceRequestStatusLookup> ServiceRequestStatuses => Set<ServiceRequestStatusLookup>();
+        public DbSet<PaymentStatusLookup> PaymentStatuses => Set<PaymentStatusLookup>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -512,6 +519,9 @@ namespace CivicSense.DataAccess
                         "CK_PaymentTransactions_Amount",
                         "[Amount] > 0"));
             });
+
+            // Configure lookup tables and foreign keys after the existing mappings.
+            LookupModelConfiguration.Configure(modelBuilder);
         }
     }
 }
