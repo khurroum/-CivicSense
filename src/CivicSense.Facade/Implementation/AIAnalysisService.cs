@@ -51,14 +51,14 @@ namespace CivicSense.Facade.Implementation
             }
 
             if (dto.SuggestedIssueType.HasValue &&
-                !Enum.IsDefined(dto.SuggestedIssueType.Value))
+                !IssueTypeLookup.IsDefined(dto.SuggestedIssueType.Value))
             {
                 throw new ValidationException(
                     "Invalid suggested issue type.");
             }
 
             if (dto.SuggestedPriority.HasValue &&
-                !Enum.IsDefined(dto.SuggestedPriority.Value))
+                !IssuePriorityLookup.IsDefined(dto.SuggestedPriority.Value))
             {
                 throw new ValidationException(
                     "Invalid suggested priority.");

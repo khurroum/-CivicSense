@@ -43,9 +43,9 @@
         {
             <tr>
                 <td>@issue.Title</td>
-                <td>@issue.IssueType</td>
-                <td>@issue.Status</td>
-                <td>@issue.Priority</td>
+                <td>@issue.IssueTypeName</td>
+                <td>@issue.StatusName</td>
+                <td>@issue.PriorityName</td>
                 <td>
                     @issue.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
                 </td>
@@ -57,9 +57,9 @@
                     </a>
 
                     @if (issue.Status ==
-                         CivicSense.Entities.IssueStatus.Reported ||
+                         CivicSense.Entities.IssueStatusLookup.Reported ||
                          issue.Status ==
-                         CivicSense.Entities.IssueStatus.NeedsInformation)
+                         CivicSense.Entities.IssueStatusLookup.NeedsInformation)
                     {
                         <a asp-action="Edit"
                            asp-route-id="@issue.Id"

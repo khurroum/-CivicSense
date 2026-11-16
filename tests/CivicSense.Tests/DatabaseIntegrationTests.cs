@@ -48,7 +48,7 @@ namespace CivicSense.Tests
                 // These tests do not perform authentication.
                 PasswordHash = "TEST_ONLY_PLACEHOLDER",
 
-                Role = UserRole.Resident,
+                Role = UserRoleLookup.Resident,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -95,9 +95,9 @@ namespace CivicSense.Tests
                         Description =
                             "The road surface has been damaged.",
                         Address = "Test Road",
-                        IssueType = IssueType.PublicCivic,
-                        Status = IssueStatus.Reported,
-                        Priority = IssuePriority.Medium,
+                        IssueType = IssueTypeLookup.PublicCivic,
+                        Status = IssueStatusLookup.Reported,
+                        Priority = IssuePriorityLookup.Medium,
                         CreatedAt = DateTime.UtcNow
                     };
 
@@ -121,12 +121,12 @@ namespace CivicSense.Tests
                     .SingleAsync(x => x.Id == issueId);
 
                 // First request updates the record.
-                issueA.Status = IssueStatus.UnderReview;
+                issueA.Status = IssueStatusLookup.UnderReview;
 
                 await first.SaveChangesAsync();
 
                 // Second request tries to update a stale version.
-                issueB.Status = IssueStatus.Rejected;
+                issueB.Status = IssueStatusLookup.Rejected;
 
                 await Assert.ThrowsAsync<
                     DbUpdateConcurrencyException>(
@@ -143,7 +143,7 @@ namespace CivicSense.Tests
                     .SingleAsync(x => x.Id == issueId);
 
                 Assert.Equal(
-                    IssueStatus.UnderReview,
+                    IssueStatusLookup.UnderReview,
                     storedIssue.Status);
             }
             finally
@@ -186,7 +186,7 @@ namespace CivicSense.Tests
                         "The streetlight is not working at night.",
                     Address = "Test Street",
                     CategoryId = categoryId,
-                    IssueType = IssueType.PublicCivic
+                    IssueType = IssueTypeLookup.PublicCivic
                 };
 
                 var result = await service.CreateAsync(
@@ -206,7 +206,7 @@ namespace CivicSense.Tests
                         .ToListAsync();
 
                 Assert.Equal(
-                    IssueStatus.Reported,
+                    IssueStatusLookup.Reported,
                     issue.Status);
 
                 Assert.Single(histories);
@@ -214,7 +214,7 @@ namespace CivicSense.Tests
                 Assert.Null(histories[0].OldStatus);
 
                 Assert.Equal(
-                    IssueStatus.Reported,
+                    IssueStatusLookup.Reported,
                     histories[0].NewStatus);
             }
             finally
@@ -264,7 +264,7 @@ namespace CivicSense.Tests
                             "This operation must be rolled back.",
                         Address = "Rollback Street",
                         CategoryId = categoryId,
-                        IssueType = IssueType.PublicCivic
+                        IssueType = IssueTypeLookup.PublicCivic
                     };
 
                     await Assert.ThrowsAsync<

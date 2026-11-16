@@ -32,7 +32,7 @@ namespace CivicSense.Facade.Implementation
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (user.Role != UserRole.Resident)
+            if (user.Role != UserRoleLookup.Resident)
             {
                 throw new UnauthorizedAccessException(
                     "Only residents can confirm civic issues.");

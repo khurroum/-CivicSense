@@ -73,7 +73,7 @@ namespace CivicSense.Web.UI.Controllers
 
             return View(new IssueCreateDto
             {
-                IssueType = IssueType.PublicCivic
+                IssueType = IssueTypeLookup.PublicCivic
             });
         }
 
@@ -126,8 +126,8 @@ namespace CivicSense.Web.UI.Controllers
             if (issue.ReporterId != CurrentUserId)
                 return Forbid();
 
-            if (issue.Status != IssueStatus.Reported &&
-                issue.Status != IssueStatus.NeedsInformation)
+            if (issue.Status != IssueStatusLookup.Reported &&
+                issue.Status != IssueStatusLookup.NeedsInformation)
             {
                 TempData["ErrorMessage"] =
                     "This issue can no longer be edited.";

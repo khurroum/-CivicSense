@@ -1,5 +1,6 @@
 ﻿
 using System.Security.Claims;
+using CivicSense.Entities;
 using CivicSense.DataAccess.Interface;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -31,7 +32,7 @@ namespace CivicSense.Web.UI.Security
 
             var user = await _users.GetByIdAsync(userId);
 
-            if (user == null || !user.IsActive)
+            if (user == null || !user.IsActive || !UserRoleLookup.IsDefined(user.Role))
             {
                 await RejectAsync(context);
                 return;
@@ -45,7 +46,7 @@ namespace CivicSense.Web.UI.Security
                 context.Principal?.FindFirstValue(
                     ClaimTypes.Email);
 
-            if (cookieRole != user.Role.ToString() ||
+            if (cookieRole != UserRoleLookup.NameOf(user.Role) ||
                 !string.Equals(
                     cookieEmail,
                     user.Email,

@@ -18,6 +18,10 @@ namespace CivicSense.DataAccess.Interface
     {
         Task<List<Issue>> GetByReporterAsync(int reporterId);
         Task<Issue?> GetDetailsAsync(int issueId);
+
+        // Read only the latest rejection explanation for the report owner.
+        Task<string?> GetRejectionReasonForOwnerAsync(
+            int issueId, int reporterId);
     }
 
     public interface IIssueImageRepository : IRepository<IssueImage>

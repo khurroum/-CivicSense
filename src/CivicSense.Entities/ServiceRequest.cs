@@ -27,8 +27,8 @@ namespace CivicSense.Entities
 
         public decimal? EstimatedCost { get; set; }
 
-        public ServiceRequestStatus Status { get; set; }
-            = ServiceRequestStatus.Pending;
+        public byte Status { get; set; }
+            = ServiceRequestStatusLookup.Pending;
 
         public DateTime CreatedAt { get; set; }
             = DateTime.UtcNow;

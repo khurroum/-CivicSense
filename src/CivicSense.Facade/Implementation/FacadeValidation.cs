@@ -39,7 +39,7 @@ namespace CivicSense.Facade.Implementation
 
             var user = await users.GetByIdAsync(actorId);
 
-            if (user == null || !user.IsActive)
+            if (user == null || !user.IsActive || !UserRoleLookup.IsDefined(user.Role))
             {
                 throw new UnauthorizedAccessException(
                     "User not found or account inactive.");
@@ -54,7 +54,7 @@ namespace CivicSense.Facade.Implementation
             var user = await GetActiveUserAsync(
                 users, actorId);
 
-            if (user.Role != UserRole.Admin)
+            if (user.Role != UserRoleLookup.Admin)
             {
                 throw new UnauthorizedAccessException(
                     "Administrator access is required.");

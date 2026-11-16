@@ -21,8 +21,8 @@ namespace CivicSense.Facade.DTOs
         [Range(1, int.MaxValue)]
         public int CategoryId { get; set; }
 
-        public IssueType IssueType { get; set; }
-            = IssueType.PublicCivic;
+        public byte IssueType { get; set; }
+            = IssueTypeLookup.PublicCivic;
 
         [Range(-90, 90)]
         public decimal? Latitude { get; set; }
@@ -80,11 +80,20 @@ namespace CivicSense.Facade.DTOs
 
         public decimal? Longitude { get; set; }
 
-        public IssueType IssueType { get; set; }
+        public byte IssueType { get; set; }
 
-        public IssueStatus Status { get; set; }
+        public string IssueTypeName => IssueTypeLookup.NameOf(IssueType);
 
-        public IssuePriority Priority { get; set; }
+        public byte Status { get; set; }
+
+        public string StatusName => IssueStatusLookup.NameOf(Status);
+
+        // Populated only for the authorized report owner in issue details.
+        public string? RejectionReason { get; set; }
+
+        public byte Priority { get; set; }
+
+        public string PriorityName => IssuePriorityLookup.NameOf(Priority);
 
         public DateTime CreatedAt { get; set; }
 

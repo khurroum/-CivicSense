@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations;
 using CivicSense.DataAccess;
 using CivicSense.DataAccess.Interface;
 using CivicSense.Entities;
-using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
+using CivicSense.Facade.DTOs;
 
 namespace CivicSense.Facade.Implementation
 {
@@ -36,107 +36,79 @@ namespace CivicSense.Facade.Implementation
             _queries = queries;
         }
 
-        // ==========================================
-        // 1. ADMIN REVIEW QUEUE
-        // ==========================================
-
-        public async Task<List<WorkflowQueueItemDto>>
-            GetAdminQueueAsync(int adminId)
+        public async Task<List<WorkflowQueueItemDto>> GetAdminQueueAsync(int adminId)
         {
-            await FacadeValidation.RequireAdminAsync(
-                _users, adminId);
-
+            await FacadeValidation.RequireAdminAsync(_users, adminId);
             var issues = await _queries.GetAdminQueueAsync();
-
-            return issues
-                .Select(MapQueueItem)
-                .ToList();
-        }
-
-        // ==========================================
-        // 2. ACTIVE STAFF DROPDOWN
-        // ==========================================
-
-        public async Task<List<WorkflowStaffOptionDto>>
-            GetActiveStaffAsync(int adminId)
-        {
-            await FacadeValidation.RequireAdminAsync(
-                _users, adminId);
-
-            var staffMembers =
-                await _queries.GetActiveStaffAsync();
-
-            return staffMembers
-                .Select(user => new WorkflowStaffOptionDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName
-                })
-                .ToList();
-        }
-
-        // ==========================================
-        // 3. STAFF ASSIGNED ISSUES
-        // ==========================================
-
-        public async Task<List<WorkflowAssignmentDto>>
-            GetMyAssignmentsAsync(int staffId)
-        {
-            var staff = await FacadeValidation
-                .GetActiveUserAsync(_users, staffId);
-
-            if (staff.Role != UserRole.Staff)
+            return issues.Select(issue => new WorkflowQueueItemDto
             {
-                throw new UnauthorizedAccessException(
-                    "Staff access is required.");
-            }
-
-            var assignments = await _queries
-                .GetActiveAssignmentsForStaffAsync(staffId);
-
-            return assignments
-                .Select(MapAssignment)
-                .ToList();
+                IssueId = issue.Id,
+                Title = issue.Title,
+                CategoryName = issue.Category?.Name ?? "Unknown category",
+                ReporterName = issue.Reporter?.FullName ?? "Unknown reporter",
+                Status = issue.Status,
+                Priority = issue.Priority,
+                ReportedAt = issue.CreatedAt
+            }).ToList();
         }
 
-        // ==========================================
-        // 4. RESTRICTED ISSUE STATUS HISTORY
-        // ==========================================
-
-        public async Task<List<WorkflowHistoryDto>>
-            GetHistoryAsync(int issueId, int actorId)
+        public async Task<List<WorkflowStaffOptionDto>> GetActiveStaffAsync(int adminId)
         {
-            var user = await FacadeValidation
-                .GetActiveUserAsync(_users, actorId);
+            await FacadeValidation.RequireAdminAsync(_users, adminId);
+            var staff = await _queries.GetActiveStaffAsync();
+            return staff.Select(user => new WorkflowStaffOptionDto
+            {
+                Id = user.Id,
+                FullName = user.FullName
+            }).ToList();
+        }
 
+        public async Task<List<WorkflowAssignmentDto>> GetMyAssignmentsAsync(int staffId)
+        {
+            var staff = await FacadeValidation.GetActiveUserAsync(_users, staffId);
+            if (staff.Role != UserRoleLookup.Staff)
+                throw new UnauthorizedAccessException("Staff access is required.");
+
+            var assignments = await _queries.GetActiveAssignmentsForStaffAsync(staffId);
+            return assignments.Select(assignment => new WorkflowAssignmentDto
+            {
+                AssignmentId = assignment.Id,
+                IssueId = assignment.Issue.Id,
+                Title = assignment.Issue.Title,
+                Description = assignment.Issue.Description,
+                Address = assignment.Issue.Address,
+                CategoryName = assignment.Issue.Category?.Name ?? "Unknown category",
+                Status = assignment.Issue.Status,
+                Priority = assignment.Issue.Priority,
+                AssignedAt = assignment.AssignedAt,
+                ExpectedCompletionAt = assignment.ExpectedCompletionAt,
+                AssignmentNote = assignment.AssignmentNote
+            }).ToList();
+        }
+
+        public async Task<List<WorkflowHistoryDto>> GetHistoryAsync(int issueId, int actorId)
+        {
+            var user = await FacadeValidation.GetActiveUserAsync(_users, actorId);
             var issue = await GetCivicIssueAsync(issueId);
-
-            // Full workflow history can contain
-            // administrative or internal notes.
-            // Restrict it to Admin or assigned Staff.
-            if (user.Role != UserRole.Admin)
+            if (user.Role != UserRoleLookup.Admin)
             {
-                if (user.Role != UserRole.Staff)
-                {
-                    throw new UnauthorizedAccessException(
-                        "Workflow history requires staff access.");
-                }
-
-                await RequireAssignedStaffAsync(
-                    issue.Id, user.Id);
+                if (user.Role != UserRoleLookup.Staff)
+                    throw new UnauthorizedAccessException("Workflow history requires staff access.");
+                await RequireAssignedStaffAsync(issue.Id, user.Id);
             }
 
-            var histories = await _queries
-                .GetHistoryByIssueAsync(issue.Id);
-
-            return histories
-                .Select(MapHistory)
-                .ToList();
+            var histories = await _queries.GetHistoryByIssueAsync(issue.Id);
+            return histories.Select(history => new WorkflowHistoryDto
+            {
+                Id = history.Id,
+                IssueId = history.IssueId,
+                OldStatus = history.OldStatus,
+                NewStatus = history.NewStatus,
+                ChangedByName = history.ChangedBy?.FullName ?? "Unknown user",
+                Note = history.Note,
+                ChangedAt = history.ChangedAt
+            }).ToList();
         }
-
-        // ==========================================
-        // 5. ADMIN: REVIEW ISSUE
-        // ==========================================
 
         public async Task ReviewAsync(
             int issueId, int adminId)
@@ -147,9 +119,9 @@ namespace CivicSense.Facade.Implementation
             var issue = await GetCivicIssueAsync(issueId);
 
             bool allowed =
-                issue.Status == IssueStatus.Reported ||
-                issue.Status == IssueStatus.NeedsInformation ||
-                issue.Status == IssueStatus.Reopened;
+                issue.Status == IssueStatusLookup.Reported ||
+                issue.Status == IssueStatusLookup.NeedsInformation ||
+                issue.Status == IssueStatusLookup.Reopened;
 
             if (!allowed)
             {
@@ -162,7 +134,7 @@ namespace CivicSense.Facade.Implementation
 
             await SaveStatusAsync(
                 issue,
-                IssueStatus.UnderReview,
+                IssueStatusLookup.UnderReview,
                 adminId,
                 "Issue is under review.");
 
@@ -170,14 +142,10 @@ namespace CivicSense.Facade.Implementation
                 issue.ReporterId,
                 issue.Id,
                 "Issue under review",
-                "Your civic report is being reviewed.");
+                "Your report is being reviewed.");
 
             await transaction.CommitAsync();
         }
-
-        // ==========================================
-        // 6. ADMIN: ASSIGN ISSUE TO STAFF
-        // ==========================================
 
         public async Task AssignAsync(
             int issueId, int staffId, int adminId)
@@ -188,15 +156,15 @@ namespace CivicSense.Facade.Implementation
             var staff = await FacadeValidation
                 .GetActiveUserAsync(_users, staffId);
 
-            if (staff.Role != UserRole.Staff)
+            if (staff.Role != UserRoleLookup.Staff)
             {
                 throw new ValidationException(
-                    "Selected user is not an active Staff member.");
+                    "Selected user is not staff.");
             }
 
             var issue = await GetCivicIssueAsync(issueId);
 
-            if (issue.Status != IssueStatus.UnderReview)
+            if (issue.Status != IssueStatusLookup.UnderReview)
             {
                 throw new ValidationException(
                     "Issue must be under review before assignment.");
@@ -208,7 +176,7 @@ namespace CivicSense.Facade.Implementation
             if (existing != null)
             {
                 throw new ValidationException(
-                    "This issue already has an active assignment.");
+                    "Issue already has an active assignment.");
             }
 
             await using var transaction =
@@ -227,7 +195,7 @@ namespace CivicSense.Facade.Implementation
 
             await SaveStatusAsync(
                 issue,
-                IssueStatus.Assigned,
+                IssueStatusLookup.Assigned,
                 adminId,
                 "Issue assigned to staff.");
 
@@ -241,14 +209,10 @@ namespace CivicSense.Facade.Implementation
                 issue.ReporterId,
                 issue.Id,
                 "Issue assigned",
-                "Your issue has been assigned to staff.");
+                "Your civic issue has been assigned to staff.");
 
             await transaction.CommitAsync();
         }
-
-        // ==========================================
-        // 7. STAFF: START WORK
-        // ==========================================
 
         public async Task StartWorkAsync(
             int issueId, int staffId)
@@ -256,7 +220,7 @@ namespace CivicSense.Facade.Implementation
             var staff = await FacadeValidation
                 .GetActiveUserAsync(_users, staffId);
 
-            if (staff.Role != UserRole.Staff)
+            if (staff.Role != UserRoleLookup.Staff)
             {
                 throw new UnauthorizedAccessException(
                     "Staff access is required.");
@@ -265,9 +229,9 @@ namespace CivicSense.Facade.Implementation
             var issue = await GetCivicIssueAsync(issueId);
 
             await RequireAssignedStaffAsync(
-                issueId, staff.Id);
+                issueId, staffId);
 
-            if (issue.Status != IssueStatus.Assigned)
+            if (issue.Status != IssueStatusLookup.Assigned)
             {
                 throw new ValidationException(
                     "Only assigned issues can start work.");
@@ -278,22 +242,18 @@ namespace CivicSense.Facade.Implementation
 
             await SaveStatusAsync(
                 issue,
-                IssueStatus.InProgress,
-                staff.Id,
-                "Staff started work on the issue.");
+                IssueStatusLookup.InProgress,
+                staffId,
+                "Staff started work.");
 
             await AddNotificationAsync(
                 issue.ReporterId,
                 issue.Id,
                 "Work started",
-                "Work has started on your reported issue.");
+                "Work has started on your issue.");
 
             await transaction.CommitAsync();
         }
-
-        // ==========================================
-        // 8. STAFF: RESOLVE ISSUE
-        // ==========================================
 
         public async Task ResolveAsync(
             int issueId, int staffId)
@@ -301,7 +261,7 @@ namespace CivicSense.Facade.Implementation
             var staff = await FacadeValidation
                 .GetActiveUserAsync(_users, staffId);
 
-            if (staff.Role != UserRole.Staff)
+            if (staff.Role != UserRoleLookup.Staff)
             {
                 throw new UnauthorizedAccessException(
                     "Staff access is required.");
@@ -310,12 +270,12 @@ namespace CivicSense.Facade.Implementation
             var issue = await GetCivicIssueAsync(issueId);
 
             await RequireAssignedStaffAsync(
-                issueId, staff.Id);
+                issueId, staffId);
 
-            if (issue.Status != IssueStatus.InProgress)
+            if (issue.Status != IssueStatusLookup.InProgress)
             {
                 throw new ValidationException(
-                    "Only in-progress issues can be resolved.");
+                    "Only issues in progress can be resolved.");
             }
 
             await using var transaction =
@@ -325,8 +285,8 @@ namespace CivicSense.Facade.Implementation
 
             await SaveStatusAsync(
                 issue,
-                IssueStatus.Resolved,
-                staff.Id,
+                IssueStatusLookup.Resolved,
+                staffId,
                 "Issue marked as resolved.");
 
             await AddNotificationAsync(
@@ -338,10 +298,6 @@ namespace CivicSense.Facade.Implementation
             await transaction.CommitAsync();
         }
 
-        // ==========================================
-        // 9. ADMIN: REJECT ISSUE
-        // ==========================================
-
         public async Task RejectAsync(
             int issueId, int adminId, string reason)
         {
@@ -352,13 +308,12 @@ namespace CivicSense.Facade.Implementation
                 reason.Trim().Length > 1000)
             {
                 throw new ValidationException(
-                    "A rejection reason of 1 to 1000 " +
-                    "characters is required.");
+                    "A rejection reason of 1 to 1000 characters is required.");
             }
 
             var issue = await GetCivicIssueAsync(issueId);
 
-            if (issue.Status != IssueStatus.UnderReview)
+            if (issue.Status != IssueStatusLookup.UnderReview)
             {
                 throw new ValidationException(
                     "Only issues under review can be rejected.");
@@ -369,7 +324,7 @@ namespace CivicSense.Facade.Implementation
 
             await SaveStatusAsync(
                 issue,
-                IssueStatus.Rejected,
+                IssueStatusLookup.Rejected,
                 adminId,
                 reason.Trim());
 
@@ -377,30 +332,22 @@ namespace CivicSense.Facade.Implementation
                 issue.ReporterId,
                 issue.Id,
                 "Issue review completed",
-                "Your issue was rejected. " +
-                "Please review the reason.");
+                "Your issue was rejected. Reason: " + reason.Trim());
 
             await transaction.CommitAsync();
         }
-
-        // ==========================================
-        // PRIVATE: VALIDATE CIVIC ISSUE
-        // ==========================================
 
         private async Task<Issue> GetCivicIssueAsync(
             int issueId)
         {
             if (issueId <= 0)
-            {
-                throw new KeyNotFoundException(
-                    "Valid issue ID is required.");
-            }
+                throw new KeyNotFoundException("Valid issue ID is required.");
 
             var issue = await _issues.GetByIdAsync(issueId);
 
             if (issue == null ||
                 issue.IsArchived ||
-                issue.IssueType != IssueType.PublicCivic)
+                issue.IssueType != IssueTypeLookup.PublicCivic)
             {
                 throw new KeyNotFoundException(
                     "Active civic issue not found.");
@@ -409,36 +356,26 @@ namespace CivicSense.Facade.Implementation
             return issue;
         }
 
-        // ==========================================
-        // PRIVATE: VERIFY STAFF ASSIGNMENT
-        // ==========================================
-
         private async Task RequireAssignedStaffAsync(
             int issueId, int staffId)
         {
             var assignment = await _assignments
                 .GetActiveByIssueAsync(issueId);
 
-            if (assignment == null ||
-                assignment.StaffId != staffId)
+            if (assignment?.StaffId != staffId)
             {
                 throw new UnauthorizedAccessException(
                     "This issue is not assigned to you.");
             }
         }
 
-        // ==========================================
-        // PRIVATE: SAVE ISSUE STATUS + HISTORY
-        // Must be called inside a database transaction.
-        // ==========================================
-
         private async Task SaveStatusAsync(
             Issue issue,
-            IssueStatus newStatus,
+            byte newStatus,
             int actorId,
             string note)
         {
-            IssueStatus previousStatus = issue.Status;
+            var previousStatus = issue.Status;
 
             if (previousStatus == newStatus)
             {
@@ -446,22 +383,12 @@ namespace CivicSense.Facade.Implementation
                     "Issue is already in this status.");
             }
 
-            if (string.IsNullOrWhiteSpace(note) ||
-                note.Length > 1000)
-            {
-                throw new ValidationException(
-                    "A valid workflow note is required.");
-            }
+            if (string.IsNullOrWhiteSpace(note) || note.Length > 1000)
+                throw new ValidationException("A valid workflow note is required.");
 
             issue.Status = newStatus;
             issue.UpdatedAt = DateTime.UtcNow;
 
-            // Existing repository saves through
-            // the same scoped ApplicationDbContext.
-            //
-            // Issue.RowVersion is an EF Core
-            // concurrency token. A conflicting
-            // database update will throw.
             await _issues.UpdateAsync(issue);
 
             var history = new IssueStatusHistory
@@ -476,11 +403,6 @@ namespace CivicSense.Facade.Implementation
 
             await _history.AddAsync(history);
         }
-
-        // ==========================================
-        // PRIVATE: SAVE DATABASE NOTIFICATION
-        // Must be called inside a database transaction.
-        // ==========================================
 
         private async Task AddNotificationAsync(
             int userId,
@@ -500,74 +422,6 @@ namespace CivicSense.Facade.Implementation
             };
 
             await _notifications.AddAsync(notification);
-        }
-
-        // ==========================================
-        // PRIVATE: MAP ADMIN QUEUE ITEM
-        // ==========================================
-
-        private static WorkflowQueueItemDto MapQueueItem(
-            Issue issue)
-        {
-            return new WorkflowQueueItemDto
-            {
-                IssueId = issue.Id,
-                Title = issue.Title,
-                CategoryName =
-                    issue.Category?.Name ?? "Unknown category",
-                ReporterName =
-                    issue.Reporter?.FullName ?? "Unknown reporter",
-                Status = issue.Status,
-                Priority = issue.Priority,
-                ReportedAt = issue.CreatedAt
-            };
-        }
-
-        // ==========================================
-        // PRIVATE: MAP STAFF ASSIGNMENT
-        // ==========================================
-
-        private static WorkflowAssignmentDto MapAssignment(
-            IssueAssignment assignment)
-        {
-            var issue = assignment.Issue;
-
-            return new WorkflowAssignmentDto
-            {
-                AssignmentId = assignment.Id,
-                IssueId = issue.Id,
-                Title = issue.Title,
-                Description = issue.Description,
-                Address = issue.Address,
-                CategoryName =
-                    issue.Category?.Name ?? "Unknown category",
-                Status = issue.Status,
-                Priority = issue.Priority,
-                AssignedAt = assignment.AssignedAt,
-                ExpectedCompletionAt =
-                    assignment.ExpectedCompletionAt,
-                AssignmentNote = assignment.AssignmentNote
-            };
-        }
-
-        // ==========================================
-        // PRIVATE: MAP STATUS HISTORY
-        // ==========================================
-
-        private static WorkflowHistoryDto MapHistory(
-            IssueStatusHistory history)
-        {
-            return new WorkflowHistoryDto
-            {
-                Id = history.Id,
-                IssueId = history.IssueId,
-                OldStatus = history.OldStatus,
-                NewStatus = history.NewStatus,
-                ChangedByName =
-                    history.ChangedBy?.FullName ?? "Unknown user",
-                Note = history.Note,
-                ChangedAt = history.ChangedAt
-            };
         }
     }
 }

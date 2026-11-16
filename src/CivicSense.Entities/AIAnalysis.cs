@@ -14,12 +14,12 @@ namespace CivicSense.Entities
 
         public string ModelName { get; set; } = string.Empty;
 
-        public IssueType? SuggestedIssueType { get; set; }
+        public byte? SuggestedIssueType { get; set; }
 
         public int? SuggestedCategoryId { get; set; }
         public virtual Category? SuggestedCategory { get; set; }
 
-        public IssuePriority? SuggestedPriority { get; set; }
+        public byte? SuggestedPriority { get; set; }
 
         public string? SuggestedSummary { get; set; }
 

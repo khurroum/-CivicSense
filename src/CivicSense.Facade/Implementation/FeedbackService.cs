@@ -49,7 +49,7 @@ namespace CivicSense.Facade.Implementation
                     "Only the reporter can submit feedback.");
             }
 
-            if (issue.Status != IssueStatus.Resolved)
+            if (issue.Status != IssueStatusLookup.Resolved)
             {
                 throw new ValidationException(
                     "Feedback is allowed after resolution.");

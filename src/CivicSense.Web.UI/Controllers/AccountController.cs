@@ -110,7 +110,7 @@ namespace CivicSense.Web.UI.Controllers
 
                 new Claim(
                     ClaimTypes.Role,
-                    user.Role.ToString())
+                    user.RoleName)
             };
 
             var identity = new ClaimsIdentity(

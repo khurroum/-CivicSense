@@ -48,7 +48,7 @@ namespace CivicSense.Facade.Implementation
             bool authorized =
                 request.UserId == user.Id ||
                 provider?.UserId == user.Id ||
-                user.Role == UserRole.Admin;
+                user.Role == UserRoleLookup.Admin;
 
             if (!authorized)
             {

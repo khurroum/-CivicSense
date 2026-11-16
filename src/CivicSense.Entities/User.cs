@@ -18,7 +18,7 @@ namespace CivicSense.Entities
 
         public string? ProfileImagePath { get; set; }
 
-        public UserRole Role { get; set; } = UserRole.Resident;
+        public byte Role { get; set; } = UserRoleLookup.Resident;
 
         public bool IsActive { get; set; } = true;
 

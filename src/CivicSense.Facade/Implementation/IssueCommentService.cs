@@ -58,7 +58,7 @@ namespace CivicSense.Facade.Implementation
 
             if (dto.IsInternal)
             {
-                if (issue.IssueType != IssueType.PublicCivic)
+                if (issue.IssueType != IssueTypeLookup.PublicCivic)
                 {
                     throw new UnauthorizedAccessException(
                         "Internal notes are for civic issues only.");
@@ -68,8 +68,8 @@ namespace CivicSense.Facade.Implementation
                     .GetActiveByIssueAsync(issueId);
 
                 bool allowed =
-                    user.Role == UserRole.Admin ||
-                    (user.Role == UserRole.Staff &&
+                    user.Role == UserRoleLookup.Admin ||
+                    (user.Role == UserRoleLookup.Staff &&
                      assignment?.StaffId == user.Id);
 
                 if (!allowed)
@@ -78,8 +78,8 @@ namespace CivicSense.Facade.Implementation
                         "You cannot create internal notes.");
                 }
             }
-            else if (issue.IssueType == IssueType.PublicCivic &&
-                     user.Role == UserRole.Staff &&
+            else if (issue.IssueType == IssueTypeLookup.PublicCivic &&
+                     user.Role == UserRoleLookup.Staff &&
                      !IssueAccess.IsPublished(issue))
             {
                 // Assigned staff may add internal notes,
@@ -115,14 +115,14 @@ namespace CivicSense.Facade.Implementation
 
             bool canReadInternal = false;
 
-            if (issue.IssueType == IssueType.PublicCivic)
+            if (issue.IssueType == IssueTypeLookup.PublicCivic)
             {
                 var assignment = await _assignments
                     .GetActiveByIssueAsync(issueId);
 
                 canReadInternal =
-                    user.Role == UserRole.Admin ||
-                    (user.Role == UserRole.Staff &&
+                    user.Role == UserRoleLookup.Admin ||
+                    (user.Role == UserRoleLookup.Staff &&
                      assignment?.StaffId == user.Id);
             }
 

@@ -6,25 +6,10 @@ namespace CivicSense.Facade.Interface
 {
     public interface IIssueWorkflowService
     {
-        // ADMIN QUERY OPERATIONS
-
-        Task<List<WorkflowQueueItemDto>>
-            GetAdminQueueAsync(int adminId);
-
-        Task<List<WorkflowStaffOptionDto>>
-            GetActiveStaffAsync(int adminId);
-
-        // STAFF QUERY OPERATIONS
-
-        Task<List<WorkflowAssignmentDto>>
-            GetMyAssignmentsAsync(int staffId);
-
-        // RESTRICTED ISSUE HISTORY
-
-        Task<List<WorkflowHistoryDto>>
-            GetHistoryAsync(int issueId, int actorId);
-
-        // EXISTING WORKFLOW OPERATIONS
+        Task<List<WorkflowQueueItemDto>> GetAdminQueueAsync(int adminId);
+        Task<List<WorkflowStaffOptionDto>> GetActiveStaffAsync(int adminId);
+        Task<List<WorkflowAssignmentDto>> GetMyAssignmentsAsync(int staffId);
+        Task<List<WorkflowHistoryDto>> GetHistoryAsync(int issueId, int actorId);
 
         Task ReviewAsync(int issueId, int adminId);
 
@@ -76,7 +61,7 @@ namespace CivicSense.Facade.Interface
 
     public interface IAIAnalysisService
     {
-        // Trusted server-side AI integration only.
+        // Trusted backend integration only.
         Task<AIAnalysisDto> RecordSuggestionAsync(
             AIAnalysisCreateDto dto);
 
@@ -105,7 +90,7 @@ namespace CivicSense.Facade.Interface
         Task UpdateStatusAsync(
             int requestId,
             int actorId,
-            ServiceRequestStatus newStatus);
+            byte newStatus);
     }
 
     public interface IPaymentService

@@ -12,7 +12,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("UserRoles");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -20,9 +19,9 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new UserRoleLookup { Id = UserRole.Resident, Name = "Resident" },
-                    new UserRoleLookup { Id = UserRole.Staff, Name = "Staff" },
-                    new UserRoleLookup { Id = UserRole.Admin, Name = "Admin" });
+                    new UserRoleLookup { Id = UserRoleLookup.Resident, Name = "Resident" },
+                    new UserRoleLookup { Id = UserRoleLookup.Staff, Name = "Staff" },
+                    new UserRoleLookup { Id = UserRoleLookup.Admin, Name = "Admin" });
             });
 
             modelBuilder.Entity<IssueTypeLookup>(entity =>
@@ -30,7 +29,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("IssueTypes");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -38,8 +36,8 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new IssueTypeLookup { Id = IssueType.PublicCivic, Name = "PublicCivic" },
-                    new IssueTypeLookup { Id = IssueType.PersonalPrivate, Name = "PersonalPrivate" });
+                    new IssueTypeLookup { Id = IssueTypeLookup.PublicCivic, Name = "PublicCivic" },
+                    new IssueTypeLookup { Id = IssueTypeLookup.PersonalPrivate, Name = "PersonalPrivate" });
             });
 
             modelBuilder.Entity<IssueStatusLookup>(entity =>
@@ -47,7 +45,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("IssueStatuses");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -55,14 +52,14 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new IssueStatusLookup { Id = IssueStatus.Reported, Name = "Reported" },
-                    new IssueStatusLookup { Id = IssueStatus.UnderReview, Name = "UnderReview" },
-                    new IssueStatusLookup { Id = IssueStatus.Assigned, Name = "Assigned" },
-                    new IssueStatusLookup { Id = IssueStatus.InProgress, Name = "InProgress" },
-                    new IssueStatusLookup { Id = IssueStatus.Resolved, Name = "Resolved" },
-                    new IssueStatusLookup { Id = IssueStatus.Rejected, Name = "Rejected" },
-                    new IssueStatusLookup { Id = IssueStatus.NeedsInformation, Name = "NeedsInformation" },
-                    new IssueStatusLookup { Id = IssueStatus.Reopened, Name = "Reopened" });
+                    new IssueStatusLookup { Id = IssueStatusLookup.Reported, Name = "Reported" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.UnderReview, Name = "UnderReview" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.Assigned, Name = "Assigned" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.InProgress, Name = "InProgress" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.Resolved, Name = "Resolved" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.Rejected, Name = "Rejected" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.NeedsInformation, Name = "NeedsInformation" },
+                    new IssueStatusLookup { Id = IssueStatusLookup.Reopened, Name = "Reopened" });
             });
 
             modelBuilder.Entity<IssuePriorityLookup>(entity =>
@@ -70,7 +67,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("IssuePriorities");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -78,10 +74,10 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new IssuePriorityLookup { Id = IssuePriority.Low, Name = "Low" },
-                    new IssuePriorityLookup { Id = IssuePriority.Medium, Name = "Medium" },
-                    new IssuePriorityLookup { Id = IssuePriority.High, Name = "High" },
-                    new IssuePriorityLookup { Id = IssuePriority.Critical, Name = "Critical" });
+                    new IssuePriorityLookup { Id = IssuePriorityLookup.Low, Name = "Low" },
+                    new IssuePriorityLookup { Id = IssuePriorityLookup.Medium, Name = "Medium" },
+                    new IssuePriorityLookup { Id = IssuePriorityLookup.High, Name = "High" },
+                    new IssuePriorityLookup { Id = IssuePriorityLookup.Critical, Name = "Critical" });
             });
 
             modelBuilder.Entity<ServiceRequestStatusLookup>(entity =>
@@ -89,7 +85,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("ServiceRequestStatuses");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -97,12 +92,12 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.Pending, Name = "Pending" },
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.Accepted, Name = "Accepted" },
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.InProgress, Name = "InProgress" },
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.Completed, Name = "Completed" },
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.Cancelled, Name = "Cancelled" },
-                    new ServiceRequestStatusLookup { Id = ServiceRequestStatus.Rejected, Name = "Rejected" });
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.Pending, Name = "Pending" },
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.Accepted, Name = "Accepted" },
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.InProgress, Name = "InProgress" },
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.Completed, Name = "Completed" },
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.Cancelled, Name = "Cancelled" },
+                    new ServiceRequestStatusLookup { Id = ServiceRequestStatusLookup.Rejected, Name = "Rejected" });
             });
 
             modelBuilder.Entity<PaymentStatusLookup>(entity =>
@@ -110,7 +105,6 @@ namespace CivicSense.DataAccess
                 entity.ToTable("PaymentStatuses");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Id)
-                    .HasConversion<byte>()
                     .ValueGeneratedNever();
                 entity.Property(x => x.Name)
                     .IsRequired()
@@ -118,12 +112,12 @@ namespace CivicSense.DataAccess
                 entity.HasIndex(x => x.Name).IsUnique();
 
                 entity.HasData(
-                    new PaymentStatusLookup { Id = PaymentStatus.Pending, Name = "Pending" },
-                    new PaymentStatusLookup { Id = PaymentStatus.Processing, Name = "Processing" },
-                    new PaymentStatusLookup { Id = PaymentStatus.Completed, Name = "Completed" },
-                    new PaymentStatusLookup { Id = PaymentStatus.Failed, Name = "Failed" },
-                    new PaymentStatusLookup { Id = PaymentStatus.Refunded, Name = "Refunded" },
-                    new PaymentStatusLookup { Id = PaymentStatus.Cancelled, Name = "Cancelled" });
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Pending, Name = "Pending" },
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Processing, Name = "Processing" },
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Completed, Name = "Completed" },
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Failed, Name = "Failed" },
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Refunded, Name = "Refunded" },
+                    new PaymentStatusLookup { Id = PaymentStatusLookup.Cancelled, Name = "Cancelled" });
             });
 
             // Use the existing tinyint columns as foreign keys.

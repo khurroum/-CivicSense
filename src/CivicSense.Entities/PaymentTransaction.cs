@@ -19,8 +19,8 @@ namespace CivicSense.Entities
 
         public string? GatewayTransactionId { get; set; }
 
-        public PaymentStatus Status { get; set; }
-            = PaymentStatus.Pending;
+        public byte Status { get; set; }
+            = PaymentStatusLookup.Pending;
 
         public DateTime CreatedAt { get; set; }
             = DateTime.UtcNow;

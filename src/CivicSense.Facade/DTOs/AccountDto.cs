@@ -49,6 +49,8 @@ namespace CivicSense.Facade.DTOs
 
         public string Email { get; set; } = string.Empty;
 
-        public UserRole Role { get; set; }
+        public byte Role { get; set; }
+
+        public string RoleName => UserRoleLookup.NameOf(Role);
     }
 }

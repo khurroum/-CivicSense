@@ -38,7 +38,7 @@ namespace CivicSense.Facade.Implementation
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (user.Role != UserRole.Resident)
+            if (user.Role != UserRoleLookup.Resident)
             {
                 throw new UnauthorizedAccessException(
                     "Only residents can request services.");
@@ -76,7 +76,7 @@ namespace CivicSense.Facade.Implementation
                 if (issue == null ||
                     issue.IsArchived ||
                     issue.ReporterId != user.Id ||
-                    issue.IssueType != IssueType.PersonalPrivate)
+                    issue.IssueType != IssueTypeLookup.PersonalPrivate)
                 {
                     throw new ValidationException(
                         "You can link only your own private issue.");
@@ -90,7 +90,7 @@ namespace CivicSense.Facade.Implementation
                 IssueId = dto.IssueId,
                 Description = dto.Description.Trim(),
                 ServiceAddress = dto.ServiceAddress.Trim(),
-                Status = ServiceRequestStatus.Pending,
+                Status = ServiceRequestStatusLookup.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -102,12 +102,12 @@ namespace CivicSense.Facade.Implementation
         public async Task UpdateStatusAsync(
             int requestId,
             int actorId,
-            ServiceRequestStatus newStatus)
+            byte newStatus)
         {
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (!Enum.IsDefined(newStatus))
+            if (!ServiceRequestStatusLookup.IsDefined(newStatus))
             {
                 throw new ValidationException(
                     "Invalid service request status.");
@@ -142,33 +142,33 @@ namespace CivicSense.Facade.Implementation
 
             // Resident may cancel a pending request.
             if (isCustomer &&
-                request.Status == ServiceRequestStatus.Pending &&
-                newStatus == ServiceRequestStatus.Cancelled)
+                request.Status == ServiceRequestStatusLookup.Pending &&
+                newStatus == ServiceRequestStatusLookup.Cancelled)
             {
                 allowed = true;
             }
 
             // Provider may accept or reject a pending request.
             if (isProvider &&
-                request.Status == ServiceRequestStatus.Pending &&
-                (newStatus == ServiceRequestStatus.Accepted ||
-                 newStatus == ServiceRequestStatus.Rejected))
+                request.Status == ServiceRequestStatusLookup.Pending &&
+                (newStatus == ServiceRequestStatusLookup.Accepted ||
+                 newStatus == ServiceRequestStatusLookup.Rejected))
             {
                 allowed = true;
             }
 
             // Provider may start accepted work.
             if (isProvider &&
-                request.Status == ServiceRequestStatus.Accepted &&
-                newStatus == ServiceRequestStatus.InProgress)
+                request.Status == ServiceRequestStatusLookup.Accepted &&
+                newStatus == ServiceRequestStatusLookup.InProgress)
             {
                 allowed = true;
             }
 
             // Provider may complete in-progress work.
             if (isProvider &&
-                request.Status == ServiceRequestStatus.InProgress &&
-                newStatus == ServiceRequestStatus.Completed)
+                request.Status == ServiceRequestStatusLookup.InProgress &&
+                newStatus == ServiceRequestStatusLookup.Completed)
             {
                 allowed = true;
             }

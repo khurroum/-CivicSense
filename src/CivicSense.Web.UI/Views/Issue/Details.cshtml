@@ -1,5 +1,4 @@
 ﻿@model CivicSense.Facade.DTOs.IssueDto
-
 @using System.Security.Claims
 @using CivicSense.Entities
 
@@ -12,33 +11,32 @@
 
     bool canEdit =
         isOwner &&
-        (Model.Status == IssueStatus.Reported ||
-         Model.Status == IssueStatus.NeedsInformation);
+        (Model.Status == IssueStatusLookup.Reported ||
+         Model.Status == IssueStatusLookup.NeedsInformation);
 
     bool canArchive =
         isOwner &&
-        (Model.Status == IssueStatus.Resolved ||
-         Model.Status == IssueStatus.Rejected);
+        (Model.Status == IssueStatusLookup.Resolved ||
+         Model.Status == IssueStatusLookup.Rejected);
 }
 
 <h2>@Model.Title</h2>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success" role="status">
+    <div class="alert alert-success">
         @TempData["SuccessMessage"]
     </div>
 }
 
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger">
         @TempData["ErrorMessage"]
     </div>
 }
 
 <dl class="row">
-
     <dt class="col-sm-3">Issue ID</dt>
     <dd class="col-sm-9">@Model.Id</dd>
 
@@ -49,21 +47,20 @@
     <dd class="col-sm-9">@Model.Address</dd>
 
     <dt class="col-sm-3">Issue Type</dt>
-    <dd class="col-sm-9">@Model.IssueType</dd>
+    <dd class="col-sm-9">@Model.IssueTypeName</dd>
 
     <dt class="col-sm-3">Status</dt>
-    <dd class="col-sm-9">@Model.Status</dd>
+    <dd class="col-sm-9">@Model.StatusName</dd>
 
     <dt class="col-sm-3">Priority</dt>
-    <dd class="col-sm-9">@Model.Priority</dd>
+    <dd class="col-sm-9">@Model.PriorityName</dd>
 
     <dt class="col-sm-3">Category ID</dt>
     <dd class="col-sm-9">@Model.CategoryId</dd>
 
     <dt class="col-sm-3">Reported On</dt>
     <dd class="col-sm-9">
-        @Model.CreatedAt.ToString(
-            "dd MMM yyyy HH:mm") UTC
+        @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
     </dd>
 
     @if (Model.Latitude.HasValue &&
@@ -74,68 +71,68 @@
             @Model.Latitude, @Model.Longitude
         </dd>
     }
-
 </dl>
 
-<hr />
+@if (isOwner && Model.Status == IssueStatusLookup.Rejected)
+{
+    <div class="alert alert-danger" role="status">
+        <h5>Rejection Reason</h5>
+        @if (string.IsNullOrWhiteSpace(Model.RejectionReason))
+        {
+            <p class="mb-0">No rejection reason was recorded. Please contact the administration for clarification.</p>
+        }
+        else
+        {
+            <p class="mb-0" style="white-space: pre-wrap; overflow-wrap: anywhere;">@Model.RejectionReason</p>
+        }
+    </div>
+}
 
+<hr />
 <h4>Issue Discussion</h4>
-
-<p class="text-muted">
-    View comments and, if authorized,
-    add public comments or internal notes.
-</p>
-
-<a asp-controller="IssueComment"
-   asp-action="Index"
-   asp-route-issueId="@Model.Id"
-   class="btn btn-outline-primary mb-3">
-    View Comments
-</a>
-
+<p class="text-muted">View comments and, if authorized, add regular comments or internal notes.</p>
+<a asp-controller="IssueComment" asp-action="Index" asp-route-issueId="@Model.Id"
+   class="btn btn-outline-primary mb-3">View Comments</a>
 <hr />
 
-<div class="d-flex flex-wrap gap-2">
+@if (canEdit)
+{
+    <a asp-action="Edit"
+       asp-route-id="@Model.Id"
+       class="btn btn-warning">
+        Edit Issue
+    </a>
+}
 
-    @if (canEdit)
-    {
-        <a asp-action="Edit"
-           asp-route-id="@Model.Id"
-           class="btn btn-warning">
-            Edit Issue
-        </a>
-    }
+@if (canArchive)
+{
+    <form asp-action="Archive"
+          asp-route-id="@Model.Id"
+          method="post"
+          class="d-inline">
 
-    @if (canArchive)
-    {
-        <form asp-action="Archive"
-              asp-route-id="@Model.Id"
-              method="post">
+        @Html.AntiForgeryToken()
 
-            @Html.AntiForgeryToken()
+        <button type="submit"
+                class="btn btn-danger"
+                onclick="return confirm('Archive this issue?');">
+            Archive Issue
+        </button>
+    </form>
+}
 
-            <button type="submit"
-                    class="btn btn-danger"
-                    onclick="return confirm('Archive this issue?');">
-                Archive Issue
-            </button>
-        </form>
-    }
-
-    @if (User.IsInRole("Resident"))
-    {
-        <a asp-action="Index"
-           class="btn btn-secondary">
-            Back to My Issues
-        </a>
-    }
-    else
-    {
-        <a asp-controller="Dashboard"
-           asp-action="Index"
-           class="btn btn-secondary">
-            Back to Dashboard
-        </a>
-    }
-
-</div>
+@if (User.IsInRole("Resident"))
+{
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Back to My Issues
+    </a>
+}
+else
+{
+    <a asp-controller="Dashboard"
+       asp-action="Index"
+       class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+}

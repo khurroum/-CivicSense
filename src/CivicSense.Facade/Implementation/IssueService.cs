@@ -41,7 +41,7 @@ namespace CivicSense.Facade.Implementation
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (user.Role != UserRole.Resident)
+            if (user.Role != UserRoleLookup.Resident)
             {
                 throw new UnauthorizedAccessException(
                     "Only residents can submit issues.");
@@ -56,7 +56,7 @@ namespace CivicSense.Facade.Implementation
                 dto.Latitude,
                 dto.Longitude);
 
-            if (!Enum.IsDefined(dto.IssueType))
+            if (!IssueTypeLookup.IsDefined(dto.IssueType))
             {
                 throw new ValidationException(
                     "Invalid issue type.");
@@ -74,8 +74,8 @@ namespace CivicSense.Facade.Implementation
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 IssueType = dto.IssueType,
-                Status = IssueStatus.Reported,
-                Priority = IssuePriority.Medium,
+                Status = IssueStatusLookup.Reported,
+                Priority = IssuePriorityLookup.Medium,
                 IsArchived = false,
                 CreatedAt = DateTime.UtcNow
             };
@@ -90,7 +90,7 @@ namespace CivicSense.Facade.Implementation
             {
                 IssueId = issue.Id,
                 OldStatus = null,
-                NewStatus = IssueStatus.Reported,
+                NewStatus = IssueStatusLookup.Reported,
                 ChangedById = user.Id,
                 Note = "Issue reported by resident.",
                 ChangedAt = DateTime.UtcNow
@@ -131,19 +131,29 @@ namespace CivicSense.Facade.Implementation
             // Reporter can view their own report.
             if (issue.ReporterId == user.Id)
             {
-                return Map(issue);
+                var result = Map(issue);
+
+                // Only the rejection explanation is disclosed, not the
+                // rest of the status history or any internal comments.
+                if (issue.Status == IssueStatusLookup.Rejected)
+                {
+                    result.RejectionReason = await _issues
+                        .GetRejectionReasonForOwnerAsync(issue.Id, user.Id);
+                }
+
+                return result;
             }
 
             // Admin can view public civic reports.
-            if (user.Role == UserRole.Admin &&
-                issue.IssueType == IssueType.PublicCivic)
+            if (user.Role == UserRoleLookup.Admin &&
+                issue.IssueType == IssueTypeLookup.PublicCivic)
             {
                 return Map(issue);
             }
 
             // Assigned staff can view public civic issues.
-            if (user.Role == UserRole.Staff &&
-                issue.IssueType == IssueType.PublicCivic)
+            if (user.Role == UserRoleLookup.Staff &&
+                issue.IssueType == IssueTypeLookup.PublicCivic)
             {
                 var assignment = await _assignments
                     .GetActiveByIssueAsync(issueId);
@@ -166,7 +176,7 @@ namespace CivicSense.Facade.Implementation
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (user.Role != UserRole.Resident)
+            if (user.Role != UserRoleLookup.Resident)
             {
                 throw new UnauthorizedAccessException(
                     "Only residents can edit their issues.");
@@ -202,8 +212,8 @@ namespace CivicSense.Facade.Implementation
                     "Only the reporter can edit this issue.");
             }
 
-            if (issue.Status != IssueStatus.Reported &&
-                issue.Status != IssueStatus.NeedsInformation)
+            if (issue.Status != IssueStatusLookup.Reported &&
+                issue.Status != IssueStatusLookup.NeedsInformation)
             {
                 throw new ValidationException(
                     "This issue cannot be edited in its current status.");
@@ -259,7 +269,7 @@ namespace CivicSense.Facade.Implementation
             var user = await FacadeValidation
                 .GetActiveUserAsync(_users, actorId);
 
-            if (user.Role != UserRole.Resident)
+            if (user.Role != UserRoleLookup.Resident)
             {
                 throw new UnauthorizedAccessException(
                     "Only residents can archive their issues.");
@@ -278,8 +288,8 @@ namespace CivicSense.Facade.Implementation
                     "Only the reporter can archive this issue.");
             }
 
-            if (issue.Status != IssueStatus.Resolved &&
-                issue.Status != IssueStatus.Rejected)
+            if (issue.Status != IssueStatusLookup.Resolved &&
+                issue.Status != IssueStatusLookup.Rejected)
             {
                 throw new ValidationException(
                     "Only resolved or rejected reports can be archived.");

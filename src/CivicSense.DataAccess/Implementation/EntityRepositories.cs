@@ -65,6 +65,22 @@ namespace CivicSense.DataAccess.Implementation
                 .ToListAsync();
         }
 
+        public Task<string?> GetRejectionReasonForOwnerAsync(
+            int issueId, int reporterId)
+        {
+            return _dbContext.IssueStatusHistories
+                .AsNoTracking()
+                .Where(h => h.IssueId == issueId &&
+                    h.Issue.ReporterId == reporterId &&
+                    !h.Issue.IsArchived &&
+                    h.Issue.Status == IssueStatusLookup.Rejected &&
+                    h.NewStatus == IssueStatusLookup.Rejected)
+                .OrderByDescending(h => h.ChangedAt)
+                .ThenByDescending(h => h.Id)
+                .Select(h => h.Note)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<Issue?> GetDetailsAsync(int issueId)
         {
             return await _dbContext.Issues

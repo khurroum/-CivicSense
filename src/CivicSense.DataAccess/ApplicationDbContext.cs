@@ -65,8 +65,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.ProfileImagePath)
                     .HasMaxLength(500);
 
-                entity.Property(x => x.Role)
-                    .HasConversion<byte>();
 
                 entity.Property(x => x.CreatedAt)
                     .HasColumnType("datetime2");
@@ -110,15 +108,6 @@ namespace CivicSense.DataAccess
 
                 entity.Property(x => x.Longitude)
                     .HasPrecision(9, 6);
-
-                entity.Property(x => x.IssueType)
-                    .HasConversion<byte>();
-
-                entity.Property(x => x.Status)
-                    .HasConversion<byte>();
-
-                entity.Property(x => x.Priority)
-                    .HasConversion<byte>();
 
                 entity.HasOne(x => x.Reporter)
                     .WithMany(x => x.Issues)
@@ -214,11 +203,7 @@ namespace CivicSense.DataAccess
             {
                 entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.OldStatus)
-                    .HasConversion<byte?>();
 
-                entity.Property(x => x.NewStatus)
-                    .HasConversion<byte>();
 
                 entity.Property(x => x.Note)
                     .HasMaxLength(1000);
@@ -339,11 +324,7 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.ConfidenceScore)
                     .HasPrecision(5, 4);
 
-                entity.Property(x => x.SuggestedIssueType)
-                    .HasConversion<byte?>();
 
-                entity.Property(x => x.SuggestedPriority)
-                    .HasConversion<byte?>();
 
                 entity.HasOne(x => x.Issue)
                     .WithMany(x => x.AIAnalyses)
@@ -453,8 +434,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.EstimatedCost)
                     .HasPrecision(18, 2);
 
-                entity.Property(x => x.Status)
-                    .HasConversion<byte>();
 
                 entity.HasOne(x => x.User)
                     .WithMany(x => x.ServiceRequests)
@@ -502,8 +481,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.GatewayTransactionId)
                     .HasMaxLength(200);
 
-                entity.Property(x => x.Status)
-                    .HasConversion<byte>();
 
                 entity.HasOne(x => x.ServiceRequest)
                     .WithMany(x => x.Payments)

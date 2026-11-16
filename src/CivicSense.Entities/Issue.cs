@@ -25,14 +25,14 @@ namespace CivicSense.Entities
 
         public decimal? Longitude { get; set; }
 
-        public IssueType IssueType { get; set; }
-            = IssueType.PublicCivic;
+        public byte IssueType { get; set; }
+            = IssueTypeLookup.PublicCivic;
 
-        public IssueStatus Status { get; set; }
-            = IssueStatus.Reported;
+        public byte Status { get; set; }
+            = IssueStatusLookup.Reported;
 
-        public IssuePriority Priority { get; set; }
-            = IssuePriority.Medium;
+        public byte Priority { get; set; }
+            = IssuePriorityLookup.Medium;
 
         public bool IsArchived { get; set; } = false;
 

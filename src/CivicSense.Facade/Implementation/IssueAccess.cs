@@ -8,11 +8,11 @@ namespace CivicSense.Facade.Implementation
     {
         public static bool IsPublished(Issue issue)
         {
-            return issue.IssueType == IssueType.PublicCivic &&
+            return issue.IssueType == IssueTypeLookup.PublicCivic &&
                 !issue.IsArchived &&
-                (issue.Status == IssueStatus.Assigned ||
-                 issue.Status == IssueStatus.InProgress ||
-                 issue.Status == IssueStatus.Resolved);
+                (issue.Status == IssueStatusLookup.Assigned ||
+                 issue.Status == IssueStatusLookup.InProgress ||
+                 issue.Status == IssueStatusLookup.Resolved);
         }
 
         public static async Task<Issue> RequireVisibleAsync(
@@ -38,18 +38,18 @@ namespace CivicSense.Facade.Implementation
                 return issue;
 
             // A private report belongs only to its reporter.
-            if (issue.IssueType == IssueType.PersonalPrivate)
+            if (issue.IssueType == IssueTypeLookup.PersonalPrivate)
             {
                 throw new UnauthorizedAccessException(
                     "You cannot access this private issue.");
             }
 
             // Admins may review civic issues.
-            if (user.Role == UserRole.Admin)
+            if (user.Role == UserRoleLookup.Admin)
                 return issue;
 
             // Assigned staff may access their civic issue.
-            if (user.Role == UserRole.Staff)
+            if (user.Role == UserRoleLookup.Staff)
             {
                 var assignment = await assignments
                     .GetActiveByIssueAsync(issueId);

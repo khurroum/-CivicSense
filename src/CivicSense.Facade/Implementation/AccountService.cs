@@ -64,7 +64,7 @@ namespace CivicSense.Facade.Implementation
                 Email = email,
                 PasswordHash =
                     PasswordHelper.HashPassword(dto.Password),
-                Role = UserRole.Resident,
+                Role = UserRoleLookup.Resident,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -85,7 +85,7 @@ namespace CivicSense.Facade.Implementation
 
             var user = await _users.GetByEmailAsync(email);
 
-            if (user == null || !user.IsActive)
+            if (user == null || !user.IsActive || !UserRoleLookup.IsDefined(user.Role))
             {
                 return null;
             }

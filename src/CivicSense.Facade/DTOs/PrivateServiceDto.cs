@@ -61,7 +61,9 @@ namespace CivicSense.Facade.DTOs
 
         public int? IssueId { get; set; }
 
-        public ServiceRequestStatus Status { get; set; }
+        public byte Status { get; set; }
+
+        public string StatusName => ServiceRequestStatusLookup.NameOf(Status);
 
         public decimal? EstimatedCost { get; set; }
 
@@ -78,7 +80,9 @@ namespace CivicSense.Facade.DTOs
 
         public string Currency { get; set; } = string.Empty;
 
-        public PaymentStatus Status { get; set; }
+        public byte Status { get; set; }
+
+        public string StatusName => PaymentStatusLookup.NameOf(Status);
 
         public DateTime CreatedAt { get; set; }
 
