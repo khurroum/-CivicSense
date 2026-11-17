@@ -1,4 +1,5 @@
-﻿using CivicSense.Entities;
+﻿
+using CivicSense.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CivicSense.DataAccess
@@ -11,7 +12,7 @@ namespace CivicSense.DataAccess
         {
         }
 
-        // All 14 Entities
+        // Original entity tables
         public DbSet<User> Users => Set<User>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Issue> Issues => Set<Issue>();
@@ -27,13 +28,19 @@ namespace CivicSense.DataAccess
         public DbSet<ServiceRequest> ServiceRequests => Set<ServiceRequest>();
         public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
 
-        // Lookup tables
+        // Normalized lookup tables
         public DbSet<UserRoleLookup> UserRoles => Set<UserRoleLookup>();
         public DbSet<IssueTypeLookup> IssueTypes => Set<IssueTypeLookup>();
         public DbSet<IssueStatusLookup> IssueStatuses => Set<IssueStatusLookup>();
         public DbSet<IssuePriorityLookup> IssuePriorities => Set<IssuePriorityLookup>();
         public DbSet<ServiceRequestStatusLookup> ServiceRequestStatuses => Set<ServiceRequestStatusLookup>();
         public DbSet<PaymentStatusLookup> PaymentStatuses => Set<PaymentStatusLookup>();
+
+        // Dynamic permission tables
+        public DbSet<Permission> Permissions => Set<Permission>();
+        public DbSet<PermissionGroup> PermissionGroups => Set<PermissionGroup>();
+        public DbSet<PermissionGroupMap> PermissionGroupMaps => Set<PermissionGroupMap>();
+        public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -64,7 +71,6 @@ namespace CivicSense.DataAccess
 
                 entity.Property(x => x.ProfileImagePath)
                     .HasMaxLength(500);
-
 
                 entity.Property(x => x.CreatedAt)
                     .HasColumnType("datetime2");
@@ -203,8 +209,6 @@ namespace CivicSense.DataAccess
             {
                 entity.HasKey(x => x.Id);
 
-
-
                 entity.Property(x => x.Note)
                     .HasMaxLength(1000);
 
@@ -324,8 +328,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.ConfidenceScore)
                     .HasPrecision(5, 4);
 
-
-
                 entity.HasOne(x => x.Issue)
                     .WithMany(x => x.AIAnalyses)
                     .HasForeignKey(x => x.IssueId)
@@ -434,7 +436,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.EstimatedCost)
                     .HasPrecision(18, 2);
 
-
                 entity.HasOne(x => x.User)
                     .WithMany(x => x.ServiceRequests)
                     .HasForeignKey(x => x.UserId)
@@ -481,7 +482,6 @@ namespace CivicSense.DataAccess
                 entity.Property(x => x.GatewayTransactionId)
                     .HasMaxLength(200);
 
-
                 entity.HasOne(x => x.ServiceRequest)
                     .WithMany(x => x.Payments)
                     .HasForeignKey(x => x.ServiceRequestId)
@@ -497,8 +497,11 @@ namespace CivicSense.DataAccess
                         "[Amount] > 0"));
             });
 
-            // Configure lookup tables and foreign keys after the existing mappings.
+            // Existing normalized lookup tables.
             LookupModelConfiguration.Configure(modelBuilder);
+
+            // NEW: Dynamic permission tables.
+            PermissionModelConfiguration.Configure(modelBuilder);
         }
     }
 }

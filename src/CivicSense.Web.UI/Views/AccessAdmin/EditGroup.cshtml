@@ -1,0 +1,197 @@
+﻿@model CivicSense.Facade.DTOs.GroupAdminPageDto
+@using CivicSense.Entities
+
+@{
+    bool isNew = Model.Id == 0;
+
+    ViewData["Title"] = isNew
+        ? "Create Permission Group"
+        : "Edit Permission Group";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (Model.DefaultRoleId.HasValue)
+{
+    <div class="alert alert-info">
+        This is the default permission group for
+        <strong>
+            @UserRoleLookup.NameOf(Model.DefaultRoleId)
+        </strong> accounts.
+
+        Changes affect users who inherit permissions
+        from this group.
+    </div>
+}
+
+<form asp-action="EditGroup"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Form.Version"
+           type="hidden" />
+
+    <div asp-validation-summary="All"
+         class="text-danger"></div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Group Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="mb-3">
+
+                <label asp-for="Form.Name"
+                       class="form-label">
+                    Group Name
+                </label>
+
+                <input asp-for="Form.Name"
+                       class="form-control"
+                       placeholder="Example: Category Managers" />
+
+                <span asp-validation-for="Form.Name"
+                      class="text-danger"></span>
+
+            </div>
+
+            <div class="mb-3">
+
+                <label asp-for="Form.Tag"
+                       class="form-label">
+                    Description
+                </label>
+
+                <textarea asp-for="Form.Tag"
+                          class="form-control"
+                          rows="3"></textarea>
+
+                <span asp-validation-for="Form.Tag"
+                      class="text-danger"></span>
+
+            </div>
+
+            @if (Model.IsProtected)
+            {
+                <input type="hidden"
+                       name="Form.IsActive"
+                       value="true" />
+
+                <p class="text-muted">
+                    The default Admin group is protected
+                    and cannot be deactivated.
+                </p>
+            }
+            else
+            {
+                <div class="form-check">
+
+                    <input asp-for="Form.IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="Form.IsActive"
+                           class="form-check-label">
+                        Active Group
+                    </label>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Available Permissions
+        </div>
+
+        <div class="card-body">
+
+            <p class="text-muted">
+                Select the permissions that members of
+                this group should receive.
+            </p>
+
+            @foreach (var permission in Model.Permissions)
+            {
+                <div class="border-bottom py-3">
+
+                    <div class="form-check">
+
+                        <input type="checkbox"
+                               name="Form.PermissionIds"
+                               value="@permission.Id"
+                               id="permission-@permission.Id"
+                               checked="@permission.IsSelected"
+                               disabled="@(!permission.IsActive || permission.IsReserved)"
+                               class="form-check-input" />
+
+                        <label for="permission-@permission.Id"
+                               class="form-check-label">
+
+                            <strong>@permission.Label</strong>
+
+                        </label>
+
+                    </div>
+
+                    <small class="text-muted ms-4">
+                        @permission.Code
+                    </small>
+
+                    @if (permission.IsReserved)
+                    {
+                        <div class="small text-muted ms-4">
+                            Protected system permission.
+                        </div>
+                    }
+                    else if (!permission.IsActive)
+                    {
+                        <div class="small text-danger ms-4">
+                            Permission is inactive.
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+    <button type="submit"
+            class="btn btn-success">
+        Save Permission Group
+    </button>
+
+    <a asp-action="Groups"
+       class="btn btn-secondary">
+        Back to Groups
+    </a>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

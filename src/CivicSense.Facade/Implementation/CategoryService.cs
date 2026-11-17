@@ -10,19 +10,25 @@ namespace CivicSense.Facade.Implementation
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categories;
-        private readonly IUserRepository _users;
+        private readonly IPermissionService _permissions;
 
         public CategoryService(
             ICategoryRepository categories,
-            IUserRepository users)
+            IPermissionService permissions)
         {
             _categories = categories;
-            _users = users;
+            _permissions = permissions;
         }
 
-        public async Task<List<CategoryDto>> GetAllAsync()
+        public async Task<List<CategoryDto>> GetAllAsync(
+            int actorId)
         {
-            var categories = await _categories.GetAllAsync();
+            await _permissions.RequireAsync(
+                actorId,
+                PermissionCodes.ManageCategories);
+
+            var categories =
+                await _categories.GetAllAsync();
 
             return categories
                 .Select(Map)
@@ -32,25 +38,40 @@ namespace CivicSense.Facade.Implementation
 
         public async Task<List<CategoryDto>> GetActiveAsync()
         {
-            var categories = await _categories.GetActiveAsync();
+            var categories =
+                await _categories.GetActiveAsync();
 
             return categories
                 .Select(Map)
                 .ToList();
         }
 
-        public async Task<CategoryDto?> GetByIdAsync(int id)
+        public async Task<CategoryDto?> GetByIdAsync(
+            int id, int actorId)
         {
-            var category = await _categories.GetByIdAsync(id);
+            var category =
+                await _categories.GetByIdAsync(id);
 
-            return category == null ? null : Map(category);
+            if (category == null)
+                return null;
+
+            if (!category.IsActive &&
+                !await _permissions.HasPermissionAsync(
+                    actorId,
+                    PermissionCodes.ManageCategories))
+            {
+                return null;
+            }
+
+            return Map(category);
         }
 
         public async Task<CategoryDto> CreateAsync(
             CategoryCreateDto dto, int actorId)
         {
-            await FacadeValidation.RequireAdminAsync(
-                _users, actorId);
+            await _permissions.RequireAsync(
+                actorId,
+                PermissionCodes.ManageCategories);
 
             FacadeValidation.Validate(dto);
 
@@ -62,7 +83,8 @@ namespace CivicSense.Facade.Implementation
                     "Category name must have at least 2 characters.");
             }
 
-            var categories = await _categories.GetAllAsync();
+            var categories =
+                await _categories.GetAllAsync();
 
             bool exists = categories.Any(x =>
                 string.Equals(
@@ -94,12 +116,14 @@ namespace CivicSense.Facade.Implementation
             CategoryUpdateDto dto,
             int actorId)
         {
-            await FacadeValidation.RequireAdminAsync(
-                _users, actorId);
+            await _permissions.RequireAsync(
+                actorId,
+                PermissionCodes.ManageCategories);
 
             FacadeValidation.Validate(dto);
 
-            var category = await _categories.GetByIdAsync(id);
+            var category =
+                await _categories.GetByIdAsync(id);
 
             if (category == null)
                 return false;
@@ -112,7 +136,8 @@ namespace CivicSense.Facade.Implementation
                     "Category name must have at least 2 characters.");
             }
 
-            var categories = await _categories.GetAllAsync();
+            var categories =
+                await _categories.GetAllAsync();
 
             bool duplicate = categories.Any(x =>
                 x.Id != id &&
@@ -138,10 +163,12 @@ namespace CivicSense.Facade.Implementation
         public async Task<bool> DeactivateAsync(
             int id, int actorId)
         {
-            await FacadeValidation.RequireAdminAsync(
-                _users, actorId);
+            await _permissions.RequireAsync(
+                actorId,
+                PermissionCodes.ManageCategories);
 
-            var category = await _categories.GetByIdAsync(id);
+            var category =
+                await _categories.GetByIdAsync(id);
 
             if (category == null)
                 return false;
@@ -159,16 +186,16 @@ namespace CivicSense.Facade.Implementation
         public async Task<bool> ReactivateAsync(
             int id, int actorId)
         {
-            // Never trust only the controller's role check.
-            await FacadeValidation.RequireAdminAsync(
-                _users, actorId);
+            await _permissions.RequireAsync(
+                actorId,
+                PermissionCodes.ManageCategories);
 
-            var category = await _categories.GetByIdAsync(id);
+            var category =
+                await _categories.GetByIdAsync(id);
 
             if (category == null)
                 return false;
 
-            // Repeated requests are safe.
             if (category.IsActive)
                 return true;
 

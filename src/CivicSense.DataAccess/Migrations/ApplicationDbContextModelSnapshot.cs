@@ -729,6 +729,157 @@ namespace CivicSense.DataAccess.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CivicSense.Entities.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DisplayText")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("Permissions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DisplayText = "Manage categories",
+                            IsActive = true,
+                            Name = "Categories.Manage"
+                        },
+                        new
+                        {
+                            Id = -100,
+                            DisplayText = "Manage users and permissions",
+                            IsActive = true,
+                            Name = "Access.Manage"
+                        });
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.PermissionGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<byte?>("DefaultRoleId")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Tag")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultRoleId")
+                        .IsUnique()
+                        .HasFilter("[DefaultRoleId] IS NOT NULL");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("PermissionGroups", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DefaultRoleId = (byte)1,
+                            IsActive = true,
+                            Name = "Default Resident"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            DefaultRoleId = (byte)2,
+                            IsActive = true,
+                            Name = "Default Staff"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            DefaultRoleId = (byte)3,
+                            IsActive = true,
+                            Name = "Default Admin"
+                        });
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.PermissionGroupMap", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PermissionGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("PermissionGroupId", "PermissionId")
+                        .IsUnique();
+
+                    b.ToTable("PermissionGroupMaps", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsActive = true,
+                            PermissionGroupId = 3,
+                            PermissionId = 1
+                        },
+                        new
+                        {
+                            Id = -100,
+                            IsActive = true,
+                            PermissionGroupId = 3,
+                            PermissionId = -100
+                        });
+                });
+
             modelBuilder.Entity("CivicSense.Entities.ServiceProvider", b =>
                 {
                     b.Property<int>("Id")
@@ -954,6 +1105,49 @@ namespace CivicSense.DataAccess.Migrations
                     b.HasIndex("Role");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.UserPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsAllowed")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("PermissionGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PermissionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionGroupId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("UserId", "PermissionGroupId")
+                        .IsUnique()
+                        .HasFilter("[PermissionGroupId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "PermissionId")
+                        .IsUnique()
+                        .HasFilter("[PermissionId] IS NOT NULL");
+
+                    b.ToTable("UserPermissions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserPermissions_ExactlyOneTarget", "([PermissionId] IS NOT NULL AND [PermissionGroupId] IS NULL) OR ([PermissionId] IS NULL AND [PermissionGroupId] IS NOT NULL AND [IsAllowed] = 1)");
+                        });
                 });
 
             modelBuilder.Entity("CivicSense.Entities.UserRoleLookup", b =>
@@ -1231,6 +1425,37 @@ namespace CivicSense.DataAccess.Migrations
                     b.Navigation("ServiceRequest");
                 });
 
+            modelBuilder.Entity("CivicSense.Entities.Permission", b =>
+                {
+                    b.HasOne("CivicSense.Entities.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.PermissionGroup", b =>
+                {
+                    b.HasOne("CivicSense.Entities.UserRoleLookup", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultRoleId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.PermissionGroupMap", b =>
+                {
+                    b.HasOne("CivicSense.Entities.PermissionGroup", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionGroupId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("CivicSense.Entities.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CivicSense.Entities.ServiceProvider", b =>
                 {
                     b.HasOne("CivicSense.Entities.User", "User")
@@ -1279,6 +1504,25 @@ namespace CivicSense.DataAccess.Migrations
                     b.HasOne("CivicSense.Entities.UserRoleLookup", null)
                         .WithMany()
                         .HasForeignKey("Role")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CivicSense.Entities.UserPermission", b =>
+                {
+                    b.HasOne("CivicSense.Entities.PermissionGroup", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionGroupId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("CivicSense.Entities.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("CivicSense.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });

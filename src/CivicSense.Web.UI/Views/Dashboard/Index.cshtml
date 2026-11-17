@@ -1,5 +1,27 @@
-﻿@{
+﻿@using CivicSense.Entities
+@using System.Security.Claims
+
+@inject CivicSense.Facade.Interface.IPermissionService Permissions
+
+@{
     ViewData["Title"] = "CivicSense Dashboard";
+
+    bool hasUserId = int.TryParse(
+        User.FindFirstValue(ClaimTypes.NameIdentifier),
+        out int actorId);
+
+    bool canManageCategories =
+        hasUserId &&
+        await Permissions.HasPermissionAsync(
+            actorId,
+            PermissionCodes.ManageCategories);
+
+    bool canManageAccess =
+        hasUserId &&
+        User.IsInRole("Admin") &&
+        await Permissions.HasPermissionAsync(
+            actorId,
+            PermissionCodes.ManageAccess);
 }
 
 <h2>CivicSense Dashboard</h2>
@@ -7,7 +29,9 @@
 <hr />
 
 <div class="card mb-4">
+
     <div class="card-body">
+
         <h5>
             Welcome, @ViewBag.FullName
         </h5>
@@ -25,7 +49,9 @@
         <p class="text-success mb-0">
             Authentication successful.
         </p>
+
     </div>
+
 </div>
 
 <h4>Quick Actions</h4>
@@ -45,12 +71,6 @@
            class="btn btn-success">
             Report New Issue
         </a>
-
-        <a asp-controller="Category"
-           asp-action="Index"
-           class="btn btn-outline-secondary">
-            Browse Categories
-        </a>
     }
 
     @if (User.IsInRole("Admin"))
@@ -59,12 +79,6 @@
            asp-action="AdminQueue"
            class="btn btn-primary">
             Civic Issue Review Queue
-        </a>
-
-        <a asp-controller="Category"
-           asp-action="Index"
-           class="btn btn-success">
-            Manage Categories
         </a>
     }
 
@@ -77,6 +91,16 @@
         </a>
     }
 
+    <a asp-controller="Category"
+       asp-action="Index"
+       class="btn btn-outline-secondary">
+
+        @(canManageCategories
+            ? "Manage Categories"
+            : "Browse Categories")
+
+    </a>
+
     <a asp-controller="Notification"
        asp-action="Index"
        class="btn btn-outline-primary">
@@ -84,6 +108,72 @@
     </a>
 
 </div>
+
+@if (canManageAccess)
+{
+    <hr />
+
+    <h4>Access Administration</h4>
+
+    <div class="row mb-4">
+
+        <div class="col-md-6 mb-3">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        User Management
+                    </h5>
+
+                    <p class="card-text">
+                        Create accounts, edit user information,
+                        assign groups and manage individual
+                        permissions.
+                    </p>
+
+                    <a asp-controller="AccessAdmin"
+                       asp-action="Users"
+                       class="btn btn-primary">
+                        Manage Users
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6 mb-3">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Permission Groups
+                    </h5>
+
+                    <p class="card-text">
+                        Create custom permission groups
+                        and configure access privileges.
+                    </p>
+
+                    <a asp-controller="AccessAdmin"
+                       asp-action="Groups"
+                       class="btn btn-primary">
+                        Manage Permission Groups
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
 
 <hr />
 
@@ -97,4 +187,5 @@
             class="btn btn-outline-danger">
         Logout
     </button>
+
 </form>

@@ -7,21 +7,28 @@
 <h2>Category Details</h2>
 
 <dl class="row">
+
     <dt class="col-sm-3">Name</dt>
-    <dd class="col-sm-9">@Model.Name</dd>
+
+    <dd class="col-sm-9">
+        @Model.Name
+    </dd>
 
     <dt class="col-sm-3">Description</dt>
+
     <dd class="col-sm-9">
         @(Model.Description ?? "No description")
     </dd>
 
     <dt class="col-sm-3">Status</dt>
+
     <dd class="col-sm-9">
         @(Model.IsActive ? "Active" : "Inactive")
     </dd>
+
 </dl>
 
-@if (User.IsInRole("Admin"))
+@if (ViewBag.CanManageCategories is true)
 {
     <a asp-action="Edit"
        asp-route-id="@Model.Id"

@@ -1,6 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using CivicSense.Entities;
 using CivicSense.Facade.DTOs;
 using CivicSense.Facade.Interface;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,14 @@ namespace CivicSense.Web.UI.Controllers
     public class CategoryController : Controller
     {
         private readonly ICategoryService _categories;
+        private readonly IPermissionService _permissions;
 
-        public CategoryController(ICategoryService categories)
+        public CategoryController(
+            ICategoryService categories,
+            IPermissionService permissions)
         {
             _categories = categories;
+            _permissions = permissions;
         }
 
         private int CurrentUserId
@@ -40,10 +45,15 @@ namespace CivicSense.Web.UI.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            bool isAdmin = User.IsInRole("Admin");
+            bool canManage =
+                await _permissions.HasPermissionAsync(
+                    CurrentUserId,
+                    PermissionCodes.ManageCategories);
 
-            var categories = isAdmin
-                ? await _categories.GetAllAsync()
+            ViewBag.CanManageCategories = canManage;
+
+            var categories = canManage
+                ? await _categories.GetAllAsync(CurrentUserId)
                 : await _categories.GetActiveAsync();
 
             return View(categories);
@@ -53,23 +63,23 @@ namespace CivicSense.Web.UI.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var category = await _categories.GetByIdAsync(id);
+            var category = await _categories.GetByIdAsync(
+                id, CurrentUserId);
 
             if (category == null)
                 return NotFound();
 
-            if (!category.IsActive &&
-                !User.IsInRole("Admin"))
-            {
-                return NotFound();
-            }
+            ViewBag.CanManageCategories =
+                await _permissions.HasPermissionAsync(
+                    CurrentUserId,
+                    PermissionCodes.ManageCategories);
 
             return View(category);
         }
 
         // GET /Category/Create
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         public IActionResult Create()
         {
             return View(new CategoryCreateDto());
@@ -77,7 +87,7 @@ namespace CivicSense.Web.UI.Controllers
 
         // POST /Category/Create
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             CategoryCreateDto model)
@@ -106,10 +116,11 @@ namespace CivicSense.Web.UI.Controllers
 
         // GET /Category/Edit/5
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         public async Task<IActionResult> Edit(int id)
         {
-            var category = await _categories.GetByIdAsync(id);
+            var category = await _categories.GetByIdAsync(
+                id, CurrentUserId);
 
             if (category == null)
                 return NotFound();
@@ -127,7 +138,7 @@ namespace CivicSense.Web.UI.Controllers
 
         // POST /Category/Edit/5
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             int id, CategoryUpdateDto model)
@@ -139,8 +150,9 @@ namespace CivicSense.Web.UI.Controllers
 
             try
             {
-                bool updated = await _categories.UpdateAsync(
-                    id, model, CurrentUserId);
+                bool updated =
+                    await _categories.UpdateAsync(
+                        id, model, CurrentUserId);
 
                 if (!updated)
                     return NotFound();
@@ -161,15 +173,16 @@ namespace CivicSense.Web.UI.Controllers
 
         // POST /Category/Deactivate/5
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Deactivate(int id)
         {
             if (id <= 0)
                 return NotFound();
 
-            bool success = await _categories.DeactivateAsync(
-                id, CurrentUserId);
+            bool success =
+                await _categories.DeactivateAsync(
+                    id, CurrentUserId);
 
             if (!success)
                 return NotFound();
@@ -182,15 +195,16 @@ namespace CivicSense.Web.UI.Controllers
 
         // POST /Category/Reactivate/5
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = PermissionCodes.ManageCategories)]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reactivate(int id)
         {
             if (id <= 0)
                 return NotFound();
 
-            bool success = await _categories.ReactivateAsync(
-                id, CurrentUserId);
+            bool success =
+                await _categories.ReactivateAsync(
+                    id, CurrentUserId);
 
             if (!success)
                 return NotFound();

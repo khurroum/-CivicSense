@@ -1,0 +1,465 @@
+﻿@model CivicSense.Facade.DTOs.UserAdminPageDto
+@using CivicSense.Entities
+
+@{
+    bool isNew = Model.Id == 0;
+
+    ViewData["Title"] = isNew
+        ? "Create User"
+        : "User Details and Permissions";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (!Model.CanEdit)
+{
+    <div class="alert alert-warning">
+        You are viewing your own account.
+
+        Self-modification is disabled to prevent
+        accidental administrator lockout.
+    </div>
+}
+
+<form asp-action="EditUser"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input asp-for="Form.Version"
+           type="hidden" />
+
+    <fieldset disabled="@(!Model.CanEdit)">
+
+        <div asp-validation-summary="All"
+             class="text-danger"></div>
+
+        <!-- ACCOUNT INFORMATION -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                Account Information
+            </div>
+
+            <div class="card-body">
+
+                @if (!isNew)
+                {
+                    <p class="text-muted">
+                        User ID: @Model.Id
+                    </p>
+                }
+
+                <div class="mb-3">
+
+                    <label asp-for="Form.FullName"
+                           class="form-label">
+                        Full Name
+                    </label>
+
+                    <input asp-for="Form.FullName"
+                           class="form-control" />
+
+                    <span asp-validation-for="Form.FullName"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label asp-for="Form.Email"
+                           class="form-label">
+                        Email Address
+                    </label>
+
+                    <input asp-for="Form.Email"
+                           class="form-control"
+                           type="email" />
+
+                    <span asp-validation-for="Form.Email"
+                          class="text-danger"></span>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Base Role
+                    </label>
+
+                    @if (isNew)
+                    {
+                        <select asp-for="Form.Role"
+                                class="form-select">
+
+                            <option value="1">
+                                Resident
+                            </option>
+
+                            <option value="2">
+                                Staff
+                            </option>
+
+                            <option value="3">
+                                Admin
+                            </option>
+
+                        </select>
+                    }
+                    else
+                    {
+                        <input asp-for="Form.Role"
+                               type="hidden" />
+
+                        <input type="text"
+                               class="form-control"
+                               value="@UserRoleLookup.NameOf(Model.Form.Role)"
+                               readonly />
+                    }
+
+                    <div class="form-text">
+                        The base role determines automatic
+                        default group membership.
+
+                        Additional privileges can be configured
+                        using custom groups.
+                    </div>
+
+                </div>
+
+                @if (isNew)
+                {
+                    <div class="mb-3">
+
+                        <label asp-for="Form.Password"
+                               class="form-label">
+                            Initial Password
+                        </label>
+
+                        <input asp-for="Form.Password"
+                               type="password"
+                               autocomplete="new-password"
+                               class="form-control"
+                               minlength="12"
+                               maxlength="128"
+                               required />
+
+                        <span asp-validation-for="Form.Password"
+                              class="text-danger"></span>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label asp-for="Form.ConfirmPassword"
+                               class="form-label">
+                            Confirm Password
+                        </label>
+
+                        <input asp-for="Form.ConfirmPassword"
+                               type="password"
+                               autocomplete="new-password"
+                               class="form-control"
+                               required />
+
+                        <span asp-validation-for="Form.ConfirmPassword"
+                              class="text-danger"></span>
+
+                    </div>
+
+                    <div class="alert alert-info">
+                        Passwords must contain at least
+                        12 characters.
+                    </div>
+                }
+
+                <div class="form-check">
+
+                    <input asp-for="Form.IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="Form.IsActive"
+                           class="form-check-label">
+                        Active Account
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- PERMISSION GROUPS -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                Permission Groups
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted">
+                    Select one or more custom groups
+                    to assign to this user.
+                </p>
+
+                <p class="small text-muted">
+                    Default role groups are inherited
+                    automatically.
+                </p>
+
+                @if (Model.Groups.Count == 0)
+                {
+                    <p>No available custom groups.</p>
+                }
+
+                @foreach (var group in Model.Groups)
+                {
+                    <div class="border-bottom py-2">
+
+                        <div class="form-check">
+
+                            <input type="checkbox"
+                                   name="Form.GroupIds"
+                                   value="@group.Id"
+                                   id="group-@group.Id"
+                                   checked="@(group.IsSelected || group.IsInherited)"
+                                   disabled="@(!group.IsActive || group.IsDefaultGroup)"
+                                   class="form-check-input" />
+
+                            <label for="group-@group.Id"
+                                   class="form-check-label">
+
+                                @group.Name
+
+                            </label>
+
+                            @if (group.IsInherited)
+                            {
+                                <span class="badge bg-primary">
+                                    Automatic
+                                </span>
+                            }
+
+                            @if (!group.IsActive)
+                            {
+                                <span class="badge bg-secondary">
+                                    Inactive
+                                </span>
+                            }
+
+                        </div>
+
+                        @if (group.IsDefaultGroup &&
+                             group.IsSelected &&
+                             !group.IsInherited)
+                        {
+                            <div class="small text-muted ms-4">
+                                Legacy explicit default-group
+                                membership will be removed on save.
+                            </div>
+                        }
+
+                    </div>
+                }
+
+                <div class="form-text mt-3">
+                    Inactive groups cannot be assigned.
+                    Existing inactive custom memberships
+                    are cleared when saving this form.
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- DIRECT AND EFFECTIVE PERMISSIONS -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                Individual Permissions
+            </div>
+
+            <div class="card-body">
+
+                <div class="alert alert-info">
+
+                    <strong>Permission rules:</strong>
+
+                    Leaving both checkboxes unchecked
+                    means Inherit.
+
+                    Allow grants the permission directly.
+
+                    Deny overrides permissions inherited
+                    from every group.
+
+                    Do not check both Allow and Deny.
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered align-middle">
+
+                        <thead>
+
+                            <tr>
+                                <th>Permission</th>
+                                <th>Inherited From</th>
+                                <th>Allow</th>
+                                <th>Deny</th>
+                                <th>Effective Access</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var permission in Model.Permissions)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <strong>
+                                            @permission.Label
+                                        </strong>
+
+                                        <div class="small text-muted">
+                                            @permission.Code
+                                        </div>
+
+                                        @if (!permission.IsActive)
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Inactive
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @(string.IsNullOrWhiteSpace(
+                                            permission.InheritedFrom)
+                                            ? "None"
+                                            : permission.InheritedFrom)
+                                    </td>
+
+                                    @if (permission.IsReserved)
+                                    {
+                                        <td colspan="2"
+                                            class="text-muted small">
+
+                                            System-managed
+
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td class="text-center">
+
+                                            <input type="checkbox"
+                                                   name="Form.AllowIds"
+                                                   value="@permission.Id"
+                                                   checked="@(permission.DirectState == "Allow")"
+                                                   disabled="@(!permission.IsActive)"
+                                                   aria-label="Allow @permission.Label"
+                                                   class="form-check-input" />
+
+                                        </td>
+
+                                        <td class="text-center">
+
+                                            <input type="checkbox"
+                                                   name="Form.DenyIds"
+                                                   value="@permission.Id"
+                                                   checked="@(permission.DirectState == "Deny")"
+                                                   disabled="@(!permission.IsActive)"
+                                                   aria-label="Deny @permission.Label"
+                                                   class="form-check-input" />
+
+                                        </td>
+                                    }
+
+                                    <td>
+
+                                        @if (isNew)
+                                        {
+                                            <span class="text-muted">
+                                                Save to evaluate
+                                            </span>
+                                        }
+                                        else if (permission.EffectiveAllowed)
+                                        {
+                                            <span class="badge bg-success">
+                                                Allowed
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                Denied
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <p class="small text-muted">
+                    Effective access displays the currently
+                    saved permissions.
+
+                    Save changes to recalculate access.
+                </p>
+
+            </div>
+
+        </div>
+
+        @if (Model.CanEdit)
+        {
+            <button type="submit"
+                    class="btn btn-success">
+                Save User & Permissions
+            </button>
+        }
+
+    </fieldset>
+
+    <a asp-action="Users"
+       class="btn btn-secondary mt-3">
+        Back to User Management
+    </a>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

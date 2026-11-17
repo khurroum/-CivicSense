@@ -1,15 +1,15 @@
-﻿
-using CivicSense.Facade.DTOs;
+﻿using CivicSense.Facade.DTOs;
 
 namespace CivicSense.Facade.Interface
 {
     public interface ICategoryService
     {
-        Task<List<CategoryDto>> GetAllAsync();
+        Task<List<CategoryDto>> GetAllAsync(int actorId);
 
         Task<List<CategoryDto>> GetActiveAsync();
 
-        Task<CategoryDto?> GetByIdAsync(int id);
+        Task<CategoryDto?> GetByIdAsync(
+            int id, int actorId);
 
         Task<CategoryDto> CreateAsync(
             CategoryCreateDto dto, int actorId);

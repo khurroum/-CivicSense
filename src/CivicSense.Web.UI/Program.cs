@@ -1,16 +1,19 @@
-
+using CivicSense.Entities;
 using CivicSense.DataAccess;
+using CivicSense.DataAccess.Interface;
+using CivicSense.DataAccess.Implementation;
 using CivicSense.Facade.Implementation;
 using CivicSense.Facade.Interface;
 using CivicSense.Web.UI;
 using CivicSense.Web.UI.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC and CSRF protection
+// MVC and antiforgery protection
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(
@@ -19,7 +22,9 @@ builder.Services.AddControllersWithViews(options =>
 
 // Global exception handling
 builder.Services.AddProblemDetails();
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddExceptionHandler<
+    GlobalExceptionHandler>();
 
 // SQL Server
 var connectionString = builder.Configuration
@@ -30,7 +35,7 @@ var connectionString = builder.Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseSqlServer(connectionString));
 
-// DataAccess
+// DataAccess services
 builder.Services.AddDataAccessServices();
 
 // Existing Facade services
@@ -67,14 +72,30 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IPaymentService, PaymentService>();
 
-// New Account Facade
 builder.Services.AddScoped<
     IAccountService, AccountService>();
+
+// Dynamic permission foundation
+builder.Services.AddScoped<
+    IPermissionRepository, PermissionRepository>();
+
+builder.Services.AddScoped<
+    IPermissionService, PermissionService>();
+
+builder.Services.AddScoped<
+    IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+// NEW: Access administration
+builder.Services.AddScoped<
+    IAccessAdminRepository, AccessAdminRepository>();
+
+builder.Services.AddScoped<
+    IAccessAdminService, AccessAdminService>();
 
 // Cookie validation
 builder.Services.AddScoped<CustomCookieEvents>();
 
-// Custom cookie authentication without Identity
+// Cookie authentication
 builder.Services
     .AddAuthentication(
         CookieAuthenticationDefaults.AuthenticationScheme)
@@ -83,13 +104,16 @@ builder.Services
         options.Cookie.Name = "CivicSense.Auth";
 
         options.Cookie.HttpOnly = true;
+
         options.Cookie.SecurePolicy =
             CookieSecurePolicy.Always;
 
         options.Cookie.SameSite =
             SameSiteMode.Lax;
 
-        options.LoginPath = "/Account/Login";
+        options.LoginPath =
+            "/Account/Login";
+
         options.AccessDeniedPath =
             "/Account/AccessDenied";
 
@@ -102,18 +126,41 @@ builder.Services
             typeof(CustomCookieEvents);
     });
 
-// Require authentication unless an action
-// explicitly allows anonymous access.
+// Authorization policies
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy(
+        PermissionCodes.ManageCategories,
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+
+            policy.AddRequirements(
+                new PermissionRequirement(
+                    PermissionCodes.ManageCategories));
+        });
+
+    // NEW: Protected access management.
+    options.AddPolicy(
+        PermissionCodes.ManageAccess,
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+
+            policy.RequireRole("Admin");
+
+            policy.AddRequirements(
+                new PermissionRequirement(
+                    PermissionCodes.ManageAccess));
+        });
+
     options.FallbackPolicy =
-        new Microsoft.AspNetCore.Authorization
-            .AuthorizationPolicyBuilder()
+        new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
 });
 
-// Antiforgery configuration for future AJAX requests
+// Antiforgery configuration
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
@@ -121,7 +168,6 @@ builder.Services.AddAntiforgery(options =>
 
 var app = builder.Build();
 
-// Existing centralized exception handler
 app.UseExceptionHandler();
 
 if (!app.Environment.IsDevelopment())
@@ -130,12 +176,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
-// Authentication MUST precede authorization
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

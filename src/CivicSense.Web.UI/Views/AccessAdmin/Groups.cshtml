@@ -1,0 +1,133 @@
+﻿@model List<CivicSense.Facade.DTOs.AccessGroupDto>
+@using CivicSense.Entities
+
+@{
+    ViewData["Title"] = "Permission Groups";
+}
+
+<h2>Permission Groups</h2>
+
+<p class="text-muted">
+    Create permission groups and manage their privileges.
+</p>
+
+<div class="d-flex gap-2 flex-wrap mb-4">
+
+    <a asp-action="EditGroup"
+       asp-route-id="0"
+       class="btn btn-primary">
+        Create New Group
+    </a>
+
+    <a asp-action="Users"
+       class="btn btn-outline-primary">
+        User Management
+    </a>
+
+    <a asp-controller="Dashboard"
+       asp-action="Index"
+       class="btn btn-secondary">
+        Dashboard
+    </a>
+
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No permission groups found.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+
+        <table class="table table-striped align-middle">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Group Name</th>
+                    <th>Description</th>
+                    <th>Group Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var group in Model)
+                {
+                    <tr>
+
+                        <td>@group.Id</td>
+
+                        <td>
+                            <strong>@group.Name</strong>
+                        </td>
+
+                        <td>@group.Tag</td>
+
+                        <td>
+                            @if (group.DefaultRoleId.HasValue)
+                            {
+                                <span class="badge bg-primary">
+                                    Default:
+                                    @UserRoleLookup.NameOf(group.DefaultRoleId)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Custom
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (group.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    Inactive
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <a asp-action="EditGroup"
+                               asp-route-id="@group.Id"
+                               class="btn btn-sm btn-warning">
+                                Edit Permissions
+                            </a>
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+}
